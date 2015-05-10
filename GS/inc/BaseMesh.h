@@ -53,7 +53,7 @@ enum ManifordType {
 template<typename P= float> struct TriangleInfo{
 	vec3<P>    Normal;
 	int        VertexId[3];
-
+	float4		color;
 };
 
 
@@ -101,7 +101,7 @@ public:
          int            Add(const VertexInfo& v1, const VertexInfo& v2, const VertexInfo& v3); 
          int            AddTriangle(const BaseMeshImp* pMesh, int TriId);
          int            AddVertex(const VertexInfo& v);
-         int            AddTriangle(int vId1, int vId2, int vId3, const Vec3D& normal);
+         int            AddTriangle(int vId1, int vId2, int vId3, const Vec3D& normal, const float4& color);
         Point3D         CenterOfGravity (int idx) const;
         void            GetMesh(ListOf3DPoints& Triangles);
         void            GenAABB(bool bNeedTriAABB);
@@ -173,6 +173,7 @@ public:
         void							DenormalizeCoord(const Box3* bbox= nullptr) {mpMeshImp->DenormalizeCoord(bbox);}
         void                        SetTransformedAABB(const Box3& box) {mpMeshImp->m_TransformBBox = box; mpMeshImp->m_bCoordNormalized = true;}
         int                        AddTriangle(const double3*);
+		int						   AddTriangle(const double3* pos, const float4& color);
 protected:
 
         void                       SetID(int nID) {  mpMeshImp->mID = nID; }
@@ -222,7 +223,7 @@ int  BaseMesh::Add(const VertexInfo& v1, const VertexInfo& v2,
    int vid1 = mpMeshImp->AddVertex(v1);
    int vid2 = mpMeshImp->AddVertex(v2);
    int vid3 = mpMeshImp->AddVertex(v3);
-   return mpMeshImp->AddTriangle(vid1, vid2, vid3, normal);
+   return mpMeshImp->AddTriangle(vid1, vid2, vid3, normal, v1.color);
  
 }
 
@@ -265,6 +266,20 @@ int  BaseMesh::AddTriangle(const double3* pos)
     info[2].pos = pos[2];
     return mpMeshImp->Add(info[0], info[1], info[2]);
     
+}
+
+inline
+int  BaseMesh::AddTriangle(const double3* pos, const float4& color)
+{
+	VertexInfo info[3];
+	info[0].pos = pos[0];
+	info[1].pos = pos[1];
+	info[2].pos = pos[2];
+	info[0].color = color;
+	info[1].color = color;
+	info[2].color = color;
+	return mpMeshImp->Add(info[0], info[1], info[2]);
+
 }
 
 inline

@@ -212,8 +212,8 @@ BOOL CGeomary3DDoc::DoSave(LPCTSTR lpszPathName, BOOL bReplace )
 				ASSERT(strExt[0] == '.');
 				int iStart = 0;
 			    int nSemi;                       //added
-				if(nSemi = strExt.Find(';'));    //added
-				strExt = strExt.Left(nSemi);     //added
+				if(nSemi = strExt.Find(';'))   //added
+					strExt = strExt.Left(nSemi);     //added
 				newName += strExt.Tokenize(_T(";"), iStart);
 			}
 		}

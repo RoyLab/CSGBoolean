@@ -14,7 +14,7 @@ void GetLoop(std::string& s)
     char c[20];
     int end;
     std::ifstream script("D:\\bool\\boolnum.txt");
-    if (!script) std::cout << '\a';
+	if (!script) return;
     script >> end;
     script.close();
     for (int i = 0 ; i < end; i++)
@@ -36,7 +36,7 @@ CGraphics::CGraphics()
 {
 	m_pD3D =0;
     //std::ifstream script("D:\\bool\\boolconfig.txt");
-    //if (!script) std::cout << '\a';
+    //if (!script) return;
     //char eval[32];
     //while (!script.eof())
     //{

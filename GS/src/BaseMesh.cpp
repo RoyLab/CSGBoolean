@@ -141,7 +141,7 @@ int  BaseMeshImp::Add(const VertexInfo& v1, const VertexInfo& v2, const VertexIn
     int vId1 = AddVertex(v1);
     int vId2 = AddVertex(v2);
     int vId3 = AddVertex(v3);
-    return AddTriangle(vId1, vId2, vId3, n);
+    return AddTriangle(vId1, vId2, vId3, n, v1.color);
  
 }
 
@@ -196,7 +196,7 @@ int	BaseMeshImp:: AddVertex(const VertexInfo& v)
 //}
 	  
 
-int  BaseMeshImp::AddTriangle(int vId1, int vId2, int vId3, const Vec3D& normal)
+int  BaseMeshImp::AddTriangle(int vId1, int vId2, int vId3, const Vec3D& normal, const float4& color)
 {
 	if (vId1 == vId2|| vId1 == vId3 || vId2 == vId3)
 		return -1 ;
@@ -207,6 +207,7 @@ int  BaseMeshImp::AddTriangle(int vId1, int vId2, int vId3, const Vec3D& normal)
 	triInfo.VertexId[0] = vId1;
 	triInfo.VertexId[1] = vId2;
 	triInfo.VertexId[2] = vId3;
+	triInfo.color = color;
 	mTriangle.push_back(triInfo);
     Box3 TriAABB; 
 	TriAABB.IncludePoint(mVertex[vId1]);
@@ -223,7 +224,7 @@ int  BaseMeshImp::AddTriangle(const BaseMeshImp* pMeshImp, int TriId)
 	int vId1 = AddVertex(pMeshImp->Vertex(pMeshImp->mTriangle[TriId].VertexId[0]));
 	int vId2 = AddVertex(pMeshImp->Vertex(pMeshImp->mTriangle[TriId].VertexId[1]));
 	int vId3 = AddVertex(pMeshImp->Vertex(pMeshImp->mTriangle[TriId].VertexId[2]));
-	return AddTriangle(vId1, vId2, vId3, pMeshImp->mTriangle[TriId].Normal);
+	return AddTriangle(vId1, vId2, vId3, pMeshImp->mTriangle[TriId].Normal, float4());
 
 }
 
@@ -530,12 +531,14 @@ void BaseMeshImp::FillD3DBuffer(ID3D11DeviceContext* dc,D3D11Buffer* mpVB, int V
 			                  D3D11Buffer* mpIB, int IBOffset)
 {
 
-      struct VertexType{
+    struct VertexType{
 		float3 vertex;
 		float4 color;
 		float3 normal;
 	};
-	int VBSize = mVertex.size()*GetVertexStride();
+
+	//Flad Shading
+	unsigned VBSize = mTriangle.size()*3*GetVertexStride();
 	unsigned char * pVBStart = (unsigned char *)mpVB->MapDeviceBuffer(dc, GS::WriteDiscard, VBOffset, VBSize);
 	assert(pVBStart!= NULL);
 	VertexType* pVBData =(VertexType*)(pVBStart+ VBOffset);
@@ -545,19 +548,19 @@ void BaseMeshImp::FillD3DBuffer(ID3D11DeviceContext* dc,D3D11Buffer* mpVB, int V
 	{
 		int Id = mTriangle[i].VertexId[0];
 		pVBData->vertex = mVertex[Id];
-		pVBData->color =  mColorTable[mColorIdx[Id]];
+		pVBData->color =  mTriangle[i].color;
 		pVBData->normal = mTriangle[i].Normal;
 		pVBData++;
 		
 		Id = mTriangle[i].VertexId[1];
 		pVBData->vertex = mVertex[Id];
-		pVBData->color =  mColorTable[mColorIdx[Id]];
+		pVBData->color = mTriangle[i].color;
 		pVBData->normal = mTriangle[i].Normal;
 		pVBData++;
 
 		Id = mTriangle[i].VertexId[2];
 		pVBData->vertex = mVertex[Id];
-		pVBData->color =  mColorTable[mColorIdx[Id]];
+		pVBData->color = mTriangle[i].color;
 		pVBData->normal = mTriangle[i].Normal;
 		pVBData++;
 	}
@@ -567,8 +570,10 @@ void BaseMeshImp::FillD3DBuffer(ID3D11DeviceContext* dc,D3D11Buffer* mpVB, int V
 	};
 	int IBSize = PrimitiveCount()*3* sizeof (unsigned int);
 	unsigned char * pIBStart = (unsigned char *)mpIB->MapDeviceBuffer(dc, GS::WriteDiscard, IBOffset, IBSize);
-		assert(pIBStart!= NULL);
-    IndexType* pIBData =(IndexType*)(pIBStart + IBOffset);
+	
+	assert(pIBStart!= NULL);
+
+	IndexType* pIBData =(IndexType*)(pIBStart + IBOffset);
 	for (int i = 0 ; i < mTriangle.size(); i++)
 	{
 		pIBData->v[0] = 3*i;
@@ -576,6 +581,51 @@ void BaseMeshImp::FillD3DBuffer(ID3D11DeviceContext* dc,D3D11Buffer* mpVB, int V
 		pIBData->v[2] = 3*i + 2;
 		pIBData++;
 	}
+
+	//Gauroud Shading
+	//int VBSize = mVertex.size()*GetVertexStride();
+	//unsigned char * pVBStart = (unsigned char *)mpVB->MapDeviceBuffer(dc, GS::WriteDiscard, VBOffset, VBSize);
+	//assert(pVBStart!= NULL);
+	//VertexType* pVBData =(VertexType*)(pVBStart+ VBOffset);
+
+	//int n = PrimitiveCount();
+	//for(int i = 0 ; i< n; i++)
+	//{
+	//	int Id = mTriangle[i].VertexId[0];
+	//	pVBData->vertex = mVertex[Id];
+	//	pVBData->color =  mColorTable[mColorIdx[Id]];
+	//	pVBData->normal = mTriangle[i].Normal;
+	//	pVBData++;
+	//	
+	//	Id = mTriangle[i].VertexId[1];
+	//	pVBData->vertex = mVertex[Id];
+	//	pVBData->color =  mColorTable[mColorIdx[Id]];
+	//	pVBData->normal = mTriangle[i].Normal;
+	//	pVBData++;
+
+	//	Id = mTriangle[i].VertexId[2];
+	//	pVBData->vertex = mVertex[Id];
+	//	pVBData->color =  mColorTable[mColorIdx[Id]];
+	//	pVBData->normal = mTriangle[i].Normal;
+	//	pVBData++;
+	//}
+	//struct IndexType {
+	//	unsigned int v[3];
+
+	//};
+	//int IBSize = PrimitiveCount()*3* sizeof (unsigned int);
+	//unsigned char * pIBStart = (unsigned char *)mpIB->MapDeviceBuffer(dc, GS::WriteDiscard, IBOffset, IBSize);
+	//
+	//assert(pIBStart!= NULL);
+
+    //IndexType* pIBData =(IndexType*)(pIBStart + IBOffset);
+	//for (int i = 0 ; i < mTriangle.size(); i++)
+	//{
+	//	pIBData->v[0] = 3*i;
+	//	pIBData->v[1] = 3*i + 1;
+	//	pIBData->v[2] = 3*i + 2;
+	//	pIBData++;
+	//}
 	mpVB->UnMapDeviceBuffer(dc);
 	mpIB->UnMapDeviceBuffer(dc);
 }

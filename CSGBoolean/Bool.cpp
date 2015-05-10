@@ -215,7 +215,6 @@ namespace CSG
 
 	static GS::BaseMesh* BooleanOperation2(GS::CSGExprNode* input, HANDLE stdoutput)
 	{
-        srand(time(0));
 		_output= stdoutput;
         MPMesh** arrMesh = NULL;
 		result = new GS::BaseMesh;
@@ -343,7 +342,7 @@ namespace CSG
 		return true;
 	}
 
-	static void AddTriangle(MPMesh* pMesh, MPMesh::FaceHandle face)
+	static void AddTriangle(MPMesh* pMesh, MPMesh::FaceHandle face, GS::float4& color)
     {
 #ifdef _DEBUG
 		countd1 ++;
@@ -355,11 +354,13 @@ namespace CSG
 		v[0] = Vec3dToDouble3(*v0);
 		v[1] = Vec3dToDouble3(*v1);
 		v[2] = Vec3dToDouble3(*v2);
-		result->AddTriangle(v);
+		result->AddTriangle(v, color);
     }
-
+	//int offset = -5;
 	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG)
 	{
+		const int seeded = 4;
+
 		MPMesh *pMesh;
 		std::queue<MPMesh::FaceHandle> faceQueue;
 		std::queue<SeedInfo> seedQueueList;
@@ -375,18 +376,22 @@ namespace CSG
         std::vector<TMP_VInfo> points;
 
         std::string randnumberout;
-        char str[32];
+        char str[64];
 		for (unsigned i0 = 0; i0 < pOctree->nMesh; i0++)
+		//for (unsigned i0 = 0; i0 < 1; i0++)
 		{
 			pMesh = pOctree->pMesh[i0];
             int randid = rand()%pMesh->n_faces();
-            sprintf_s(str, "(%u, %d)", i0, randid);
+			//randid = 31+offset++; // 11784, banana32
+			//randid = 392; //buuny
+            sprintf_s(str, "FLOOD:%u, rand:%d, faces:%d \n", i0, randid, pMesh->n_faces());
             randnumberout += str;
 			curFace = pMesh->face_handle(randid);
-
+			AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
 			// 初始化第一个种子堆
 			seedQueueList.emplace();
 			SeedInfo &seedInfos = seedQueueList.back();
+			pMesh->property(pMesh->MarkPropHandle, curFace) = seeded;
 			seedInfos.relation = new Relation[pOctree->nMesh];
 			seedInfos.queue.emplace();
 			seedInfos.queue.back().seed = curFace;
@@ -402,13 +407,18 @@ namespace CSG
 			for (unsigned i = 0; i < pOctree->nMesh; i++)
 			{
 				if (seedInfos.relation[i] == REL_UNKNOWN)
+				{
 					seedInfos.relation[i] = PolyhedralInclusionTest(bc, pOctree, i, pOctree->pMesh[i]->bInverse);
+					sprintf_s(str, "PointInOut:%d, prim:%d, relation:%d \n", randid, i, seedInfos.relation[i]);
+					randnumberout += str;
+				}
 			}
 
 			while (!seedQueueList.empty())
 			{
 				// 选取一个种子堆
 				auto &seeds = seedQueueList.front();
+
 				while (!seeds.queue.empty())
 				{
 					while (!seeds.queue.empty())
@@ -426,6 +436,12 @@ namespace CSG
 					seeds.queue.pop();
 					GetRelationTable(pMesh, curFace, relatedFace, seeds.relation, pOctree->nMesh, pOctree, curRelationTable);
 
+					GS::float4 color;
+					color[3] = 1.0f;
+					color[0] = rand() / (float)RAND_MAX;
+					color[1] = rand() / (float)RAND_MAX;
+					color[2] = rand() / (float)RAND_MAX;
+
 					// 初始化该种子对应的种子堆
 					seedQueueList.emplace();
 					seedQueueList.back().relation = curRelationTable;
@@ -442,13 +458,13 @@ namespace CSG
 					{
 						while (!faceQueue.empty())
 						{					
-							while (1)
+							while (!faceQueue.empty())
 							{
 								if (pMesh->property(pMesh->MarkPropHandle, faceQueue.front()) != 2)
 									break;
 								faceQueue.pop();
 							}
-
+							if (faceQueue.empty()) break;
 							curFace = faceQueue.front();
 #ifdef _DEBUG
 							GetCorners(pMesh, curFace, v0, v1, v2);
@@ -457,27 +473,30 @@ namespace CSG
 							auto seedSurface = pMesh->property(pMesh->SurfacePropHandle, curFace);
 							faceQueue.pop();
 
-                            	// add neighbor
+                            // add neighbor
                             bool IsSeed = false;
 							ffItr = pMesh->ff_iter(curFace);
 							int *markPtr;
 							for (int i = 0; i < 3; i++, ffItr++)
 							{
 								markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
-								if (*markPtr == 0)
+								if (*markPtr != 2)
 								{
 									auto legSurface = pMesh->property(pMesh->SurfacePropHandle, *ffItr);
-									if (legSurface && CompareRelationSpace(seedSurface, legSurface))
+									if (*markPtr != 1 && legSurface && CompareRelationSpace(seedSurface, legSurface))
+									{
+										*markPtr = 1; // queued
 										faceQueue.push(*ffItr);
-									else
+									}
+									else if (*markPtr != seeded)
 									{
 										FacePair fh;
 										fh[0] = curFace;
 										fh[1] = *ffItr;
 										seedQueueList.back().queue.push(fh);
-                                        IsSeed = true;
+										*markPtr = seeded;
+										IsSeed = true;
 									}
-									*markPtr = 1; // queued
 								}
 							}
 
@@ -494,13 +513,13 @@ namespace CSG
 					{
 						while (!faceQueue.empty())
 						{			
-							while (1)
+							while (!faceQueue.empty())
 							{
 								if (pMesh->property(pMesh->MarkPropHandle, faceQueue.front()) != 2)
 									break;
 								faceQueue.pop();
 							}
-
+							if (faceQueue.empty()) break;
 							curFace = faceQueue.front();
 #ifdef _DEBUG
 							GetCorners(pMesh, curFace, v0, v1, v2);
@@ -509,7 +528,7 @@ namespace CSG
 #endif
 
 							faceQueue.pop();
-							if (curRelation == REL_SAME) AddTriangle(pMesh, curFace);
+							if (curRelation == REL_SAME) AddTriangle(pMesh, curFace, color);
 							pMesh->property(pMesh->MarkPropHandle, curFace) = 2; // processed
 
 							// add neighbor
@@ -518,19 +537,22 @@ namespace CSG
 							for (int i = 0; i < 3; i++, ffItr++)
 							{
 								markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
-								if (*markPtr == 0)
+								if (*markPtr != 2)
 								{
 									auto legSurface = pMesh->property(pMesh->SurfacePropHandle, *ffItr);
-									if (!legSurface || (!legSurface->segs.size() && !legSurface->coplanarTris.size()))
+									if (*markPtr != 1 && (!legSurface || (!legSurface->segs.size() && !legSurface->coplanarTris.size())))
+									{
+										*markPtr = 1; // queued
 										faceQueue.push(*ffItr);
-									else
+									}
+									else if (*markPtr != seeded)
 									{
 										FacePair fh;
 										fh[0] = curFace;
 										fh[1] = *ffItr;
 										seedQueueList.back().queue.push(fh);
+										*markPtr = seeded;
 									}
-									*markPtr = 1; // queued
 								}
 							}
 						}

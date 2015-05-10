@@ -7,7 +7,7 @@
 
 #ifndef _DEBUG
 #define _USE_MATH_DEFINES
-#define NDEBUG
+//#define NDEBUG
 #else
 extern int countd1, countd2, countd3, countd4, countd5;
 #endif

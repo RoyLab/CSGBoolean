@@ -95,6 +95,7 @@ BOOL CGeomary3DView::PreCreateWindow(CREATESTRUCT& cs)
 void CGeomary3DView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
+	srand(time(0));
     AllocConsole();
 	/*RECT rc;
 	GetClientRect(&rc);

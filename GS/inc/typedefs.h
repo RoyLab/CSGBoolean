@@ -9,7 +9,7 @@
 #include "mat4.h"
 namespace GS{
 
-#define EPSF                  1e-5f
+#define EPSF                  1e-6f
 
 
 #ifndef PI
