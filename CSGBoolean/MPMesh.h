@@ -26,14 +26,14 @@ namespace CSG
 
 	struct MPMesh:public MPMeshKernel
 	{
-		MPMesh(GS::BaseMesh* pMesh = nullptr);
+		MPMesh(const GS::BaseMesh* pMesh = nullptr);
         ~MPMesh(void);
 
 		int  ID;
 		bool bInverse;
 		AABBmp BBox;
 
-        GS::BaseMesh* pOrigin;
+        const GS::BaseMesh* pOrigin;
 		Vec3d *verticesList;
 
 		OpenMesh::FPropHandleT<unsigned> PointInOutTestPropHandle; // 是否在内外测试中被检测过
@@ -43,7 +43,8 @@ namespace CSG
 	};
 
 
-	MPMesh* ConvertToMPMesh(GS::BaseMesh* pMesh);
+	MPMesh* ConvertToMPMesh(const GS::BaseMesh* pMesh);
+	MPMesh* ConvertToMPMeshChrome(const GS::BaseMesh* pMesh);
 	inline GS::double3 Vec3dToDouble3(const Vec3d& vec){return GS::double3(vec[0], vec[1], vec[2]);}
 	inline Vec3d Double3ToVec3d(const GS::double3& vec){return Vec3d(vec[0], vec[1], vec[2]);}
 

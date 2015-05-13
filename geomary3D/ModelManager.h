@@ -29,7 +29,6 @@ public:
 	int  GetPrimiaryCount() const ;
 	int  GetVertexCount() const ;
 
-private : 
 	std::vector<GS::BaseMesh*> mpMeshList;
 	std::vector<GS::Geometry*> mpResultMeshList;
     bool mbInvalidate; 

@@ -22,6 +22,7 @@
 #include "Geomary3DDoc.h"
 #include "Geomary3DView.h"
 #include "MainFrm.h"
+#include <Bool.h>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -67,6 +68,7 @@ ON_COMMAND(ID_LOCALIZED_BSP_DIFFERENCE, &CGeomary3DView::OnLocalizedBspDifferenc
 ON_UPDATE_COMMAND_UI(ID_LOCALIZED_BSP_DIFFERENCE, &CGeomary3DView::OnUpdateLocalizedBspDifference)
 ON_UPDATE_COMMAND_UI(ID_BUTTON2, &CGeomary3DView::OnUpdateOctreeViewStatus)
 ON_COMMAND(ID_BUTTON2, &CGeomary3DView::OnOcteeShow)
+ON_WM_KEYUP()
 END_MESSAGE_MAP()
 
 // CGeomary3DView construction/destruction
@@ -432,4 +434,19 @@ void CGeomary3DView::OnOcteeShow()
     mbOctreeShow = !mbOctreeShow;
     mpGraphic->ShowOctree(mbOctreeShow);
     
+}
+
+
+void CGeomary3DView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: Add your message handler code here and/or call default
+	switch (nChar)
+	{
+	case 67:
+		CSG::SnapModel((GS::BaseMesh*)(Graphic()->GetModelMgr().mpResultMeshList[0]));
+		break;
+	default:
+		break;
+	}
+	CView::OnKeyUp(nChar, nRepCnt, nFlags);
 }

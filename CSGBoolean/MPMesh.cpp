@@ -13,7 +13,7 @@ namespace CSG
 		return OpenMesh::Vec3d(vec.x, vec.y, vec.z);
 	}
 
-	MPMesh::MPMesh(GS::BaseMesh* pMesh):
+	MPMesh::MPMesh(const GS::BaseMesh* pMesh):
         ID(-1), pOrigin(pMesh), bInverse(false),
 		verticesList(nullptr)
     {
@@ -34,7 +34,41 @@ namespace CSG
 		SAFE_RELEASE_ARRAY(verticesList);
     }
 
-	MPMesh* ConvertToMPMesh(GS::BaseMesh* pMesh)
+	MPMesh* ConvertToMPMeshChrome(const GS::BaseMesh* pMesh)
+	{
+		MPMesh *res = new MPMesh(pMesh);
+		res->request_face_colors();
+		int n = (int)pMesh->VertexCount();
+		res->BBox.Clear();
+		MPMesh::VertexHandle vhandle;
+		res->verticesList = new Vec3d[n];
+		for (int i = 0; i < n; i++)
+		{
+			res->verticesList[i] = convert_double3(pMesh->Vertex(i).pos);
+			vhandle = res->add_vertex(res->verticesList[i]);
+			//res->property(res->PointInOutTestPropHandle, vhandle) = 0;
+			res->BBox.IncludePoint(res->point(vhandle));
+		}
+
+		std::vector<MPMesh::VertexHandle>  face_vhandles(3);
+		n = (int)pMesh->PrimitiveCount();
+		for (int i = 0; i < n; i++)
+		{
+			auto &info = pMesh->TriangleInfo(i);
+			face_vhandles[0] = res->vertex_handle(info.VertexId[0]);
+			face_vhandles[1] = res->vertex_handle(info.VertexId[1]);
+			face_vhandles[2] = res->vertex_handle(info.VertexId[2]);
+			MPMesh::FaceHandle fh = res->add_face(face_vhandles);
+			res->set_color(fh, MPMesh::Color(info.color[0], info.color[1], info.color[2]));
+		}
+
+		res->update_normals();
+
+		return res;
+	}
+
+
+	MPMesh* ConvertToMPMesh(const GS::BaseMesh* pMesh)
 	{
 		MPMesh *res = new MPMesh(pMesh);
 
@@ -64,7 +98,6 @@ namespace CSG
 		res->update_normals();
 
 		return res;
-		return NULL;
 	}
 
 } // namespace CSG 

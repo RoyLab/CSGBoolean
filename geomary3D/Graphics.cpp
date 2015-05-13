@@ -148,7 +148,7 @@ bool CGraphics::Render()
 	GS::float3 lightDir2 = normalize(mLightMgr.DefaultLight(1).Direction());
 	ComputeLightDirection(mLightMgr.DefaultLight(1), worldMat, lightDir2);
 	float SpecularFactor = mLightMgr.DefaultLight(0).SpecularFactor();
-	m_pD3D->BeginScene(0.0f, 1.0f, 1.0f, 1.0f);
+	m_pD3D->BeginScene(1.0f, 1.0f, 1.0f, 1.0f);
 	mShader.SetShaderMatrix(m_pD3D->GetDeviceContext(), worldMatrix, mCamera.ViewMatrix(), mCamera.ProjectionMatrix(), mCamera.Eye());
 	mShader.SetShaderLights(m_pD3D->GetDeviceContext(),mLightMgr.AmbientColor(), diffuse1, specular1, lightDir1, diffuse2, lightDir2, SpecularFactor);
 	mShader.Render( m_pD3D->GetDeviceContext());

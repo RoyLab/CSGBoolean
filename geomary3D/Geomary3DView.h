@@ -95,6 +95,7 @@ public:
     afx_msg void OnUpdateLocalizedBspDifference(CCmdUI *pCmdUI);
     afx_msg void OnUpdateOctreeViewStatus(CCmdUI *pCmdUI);
     afx_msg void OnOcteeShow();
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 #ifndef _DEBUG  // debug version in Geomary3DView.cpp
