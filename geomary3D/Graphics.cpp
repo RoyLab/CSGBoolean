@@ -17,7 +17,7 @@ void GetLoop(std::string& s)
 	if (!script) return;
     script >> end;
     script.close();
-	end /= 40;
+	end /= 20;
 	s = "0";
     for (int i = 1 ; i < end+1; i++)
     {

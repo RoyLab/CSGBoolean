@@ -425,7 +425,7 @@ namespace CSG
 				if (seedInfos.relation[i] == REL_UNKNOWN)
 				{
 					seedInfos.relation[i] = PolyhedralInclusionTest(bc, pOctree, i, pOctree->pMesh[i]->bInverse);
-					sprintf_s(str, "PointInOut:%d, prim:%d, relation:%d \n", randid, i, seedInfos.relation[i]);
+					//sprintf_s(str, "PointInOut:%d, prim:%d, relation:%d \n", randid, i, seedInfos.relation[i]);
 					randnumberout += str;
 				}
 			}
@@ -577,7 +577,7 @@ namespace CSG
 				seedQueueList.pop();
 			}
 		}
-        StdOutput(randnumberout.c_str());
+        //StdOutput(randnumberout.c_str());
         delete [] curTreeLeaves;
 	}
 }
