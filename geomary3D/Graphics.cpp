@@ -17,16 +17,19 @@ void GetLoop(std::string& s)
 	if (!script) return;
     script >> end;
     script.close();
-    for (int i = 0 ; i < end; i++)
+	end /= 40;
+	s = "0";
+    for (int i = 1 ; i < end+1; i++)
     {
-         
-        sprintf_s(c, 20, "%d", i);
-        s+=c;
-        if (i <end-1)
-            if (flag) s+="+";
-            else s+="-";
-        flag = !flag;
-    }
+		for (int j = 0; j < 20; j++)
+		{
+			if (flag) s += "+";
+			else s += "-";
+			sprintf_s(c, 20, "%d", i  + j* 40);
+			s += c;
+		}
+		flag = !flag;
+	}
 }
 
 

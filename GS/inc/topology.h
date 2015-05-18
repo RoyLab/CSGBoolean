@@ -154,7 +154,7 @@ static inline bool SignDeterminant(const vec3<P>& v0, const vec3<P>& v1, const v
     m[1] = v1 -v3;
     m[2] = v2- v3;
     P det = determinant(m);
-    if (det > EPSF) return true;
+    if (det > 1e-5) return true;
     return false ; 
 }
 

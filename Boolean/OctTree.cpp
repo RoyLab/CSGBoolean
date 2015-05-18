@@ -43,6 +43,7 @@ int PolygonObj::AddPolygon(BaseMesh& mesh, std::hash_map<IndexPair, bool, IndexP
 
 int PolygonObj::RayFaceTest(const double3& st, const double3& et, const double3& dir, const Plane<double>& splane)
 {
+	const double EPSF1 = 1.0e-5;
      const TriInfo& tri = mpMesh->TriangleInfo(mTriId);
      Point3D& v0 = mpMesh->Vertex( tri.VertexId[0]).pos;
      Point3D& v1 = mpMesh->Vertex( tri.VertexId[1]).pos;
@@ -52,13 +53,13 @@ int PolygonObj::RayFaceTest(const double3& st, const double3& et, const double3&
      double t, u, v;
      if (!RayTriangleIntersectTest(st, dir, v0, v1, v2, u, v, t))
          return 0 ; 
-     if (t <= EPSF && t >= -EPSF)
+	 if (t <= EPSF1 && t >= -EPSF1)
      {
-          if (dot((et -st),  tri.Normal) < -EPSF) 
+          if (dot((et -st),  tri.Normal) < -EPSF1) 
             return -2;
         else return -1;
      }
-     if (fabs(u) > EPSF &&  fabs(v) > EPSF && fabs(1-u-v) > EPSF)
+     if (fabs(u) > EPSF1 &&  fabs(v) > EPSF1 && fabs(1-u-v) > EPSF1)
         return 1;
      bool A0 = PointWithPlane(splane.Normal(), splane.Distance(), v0);
      bool A1 = PointWithPlane(splane.Normal(), splane.Distance(), v1);
@@ -306,7 +307,7 @@ OctTreeNode* OctTree::BuildTree(std::vector<BaseMesh*>& meshes, std::vector< Pol
             }
           
         }
-        assert(bMatched);
+        //assert(bMatched);
     }
     for (int i = 0; i < 8 ; i++)
     {

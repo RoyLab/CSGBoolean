@@ -261,10 +261,10 @@ namespace CSG
 	extern "C" CSG_API void SnapModel(const GS::BaseMesh* mesh)
 	{
 		MPMesh *kk = ConvertToMPMeshChrome(mesh);
-		//OpenMesh::IO::Options wopt;
+		OpenMesh::IO::Options wopt;
 		//wopt += OpenMesh::IO::Options::FaceNormal;
-		//wopt += OpenMesh::IO::Options::FaceColor;
-		if (OpenMesh::IO::write_mesh(*kk, "C:\\Users\\RUI\\Desktop\\model.obj"))
+		wopt += OpenMesh::IO::Options::FaceColor;
+		if (OpenMesh::IO::write_mesh(*kk, "C:\\Users\\RUI\\Desktop\\model.obj", wopt))
 			StdOutput("Write files success.\n");
 		else StdOutput("Write files failed.\n");
 		kk->release_face_colors();
@@ -372,7 +372,7 @@ namespace CSG
 		v[2] = Vec3dToDouble3(*v2);
 		result->AddTriangle(v, color);
     }
-	//int offset = -5;
+	int offset = -5;
 	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG)
 	{
 		const int seeded = 4;
@@ -398,12 +398,12 @@ namespace CSG
 		{
 			pMesh = pOctree->pMesh[i0];
             int randid = rand()%pMesh->n_faces();
-			//randid = 31+offset++; // 11784, banana32
+			randid = 31+offset++; // 11784, banana32
 			//randid = 392; //buuny
             sprintf_s(str, "FLOOD:%u, rand:%d, faces:%d \n", i0, randid, pMesh->n_faces());
             randnumberout += str;
-			curFace = pMesh->face_handle(randid);
-			//AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
+			curFace = pMesh->face_handle(46);
+			AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
 			// 初始化第一个种子堆
 			seedQueueList.emplace();
 			SeedInfo &seedInfos = seedQueueList.back();
