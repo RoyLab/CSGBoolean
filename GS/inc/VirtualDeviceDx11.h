@@ -36,6 +36,7 @@ public:
 
 	void BeginScene(float, float, float, float);
 	void EndScene();
+    void SetRenderState(bool wireframe = true);
 
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();
@@ -54,7 +55,7 @@ private:
 	ID3D11Texture2D* m_depthStencilBuffer;
 	ID3D11DepthStencilState* m_depthStencilState;
 	ID3D11DepthStencilView* m_depthStencilView;
-	ID3D11RasterizerState* m_rasterState;
+	ID3D11RasterizerState* m_rasterState, *m_rasterState1;
 };
 
 }

@@ -52,7 +52,7 @@ bool   Shader::Initialize(ID3D11Device* device, HWND hwnd, WCHAR* vsFileName, LP
 	HRESULT result;
 	ID3D10Blob* errorMessage = 0;
 	ID3D10Blob* vertexShaderBuffer = 0;
-	ID3D10Blob* pixelShaderBuffer = 0 ;
+	ID3D10Blob* pixelShaderBuffer = 0, *pixelShaderBuffer1 = 0 ;
 	// Compile the vertex shader code.
 	result = D3DX11CompileFromFile(vsFileName, NULL, NULL, vsName, "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS|D3D10_SHADER_DEBUG|D3D10_SHADER_SKIP_OPTIMIZATION, 0, NULL, 
 								   &vertexShaderBuffer, &errorMessage, NULL);
@@ -72,7 +72,18 @@ bool   Shader::Initialize(ID3D11Device* device, HWND hwnd, WCHAR* vsFileName, LP
 		HandleCompilingError(errorMessage, psFileName);
 		return false;
 	}
-	    // Create the vertex shader from the buffer.
+
+    // Compile the pixel shader code.
+	result = D3DX11CompileFromFile(psFileName, NULL, NULL, "PS2", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS|D3D10_SHADER_DEBUG|D3D10_SHADER_SKIP_OPTIMIZATION, 0, NULL, 
+								   &pixelShaderBuffer1, &errorMessage, NULL);
+	if(FAILED(result))
+	{
+		// If the shader failed to compile it should have writen something to the error message.
+		HandleCompilingError(errorMessage, psFileName);
+		return false;
+	}
+
+	// Create the vertex shader from the buffer.
     result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
 	if(FAILED(result))
 	{
@@ -88,6 +99,16 @@ bool   Shader::Initialize(ID3D11Device* device, HWND hwnd, WCHAR* vsFileName, LP
 		pixelShaderBuffer->Release();
 		return false;
 	}
+
+    result = device->CreatePixelShader(pixelShaderBuffer1->GetBufferPointer(), pixelShaderBuffer1->GetBufferSize(), NULL, &m_pixelShader1);
+	if(FAILED(result))
+	{
+		vertexShaderBuffer->Release();
+		pixelShaderBuffer->Release();
+		pixelShaderBuffer1->Release();
+		return false;
+	}
+
 	int nElements =0;
 	D3D11_INPUT_ELEMENT_DESC* pInputDesc = NULL;
 	GetInputLayerout(&pInputDesc, nElements);
@@ -108,20 +129,23 @@ bool   Shader::Initialize(ID3D11Device* device, HWND hwnd, WCHAR* vsFileName, LP
 	// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
 	vertexShaderBuffer->Release();
 	pixelShaderBuffer->Release();
+	pixelShaderBuffer1->Release();
 	return true;
    
 }
 
-void Shader::Render(ID3D11DeviceContext* deviceContext)
+void Shader::Render(ID3D11DeviceContext* deviceContext, bool state)
 {
 	// Set the vertex input layout.
 	deviceContext->IASetInputLayout(m_layout);
 
     // Set the vertex and pixel shaders that will be used to render this triangle.
     deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-    deviceContext->PSSetShader(m_pixelShader, NULL, 0);
+    if (state)
+        deviceContext->PSSetShader(m_pixelShader, NULL, 0);
+    else
+        deviceContext->PSSetShader(m_pixelShader1, NULL, 0);
 
-	
 	return;
 }
 

@@ -244,6 +244,13 @@ bool VirtualDeviceDx11::Initialize(int screenWidth, int screenHeight, bool vsync
 		return false;
 	}
 
+	rasterDesc.FillMode = D3D11_FILL_WIREFRAME;
+	rasterDesc.DepthBias = -10;
+	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState1);
+	if(FAILED(result))
+	{
+		return false;
+	}
 	// Now set the rasterizer state.
 	m_deviceContext->RSSetState(m_rasterState);
 	
@@ -260,6 +267,17 @@ bool VirtualDeviceDx11::Initialize(int screenWidth, int screenHeight, bool vsync
 
     return true;
 }
+
+
+void VirtualDeviceDx11::SetRenderState(bool notwireframe)
+{
+    if (notwireframe)
+	    m_deviceContext->RSSetState(m_rasterState);
+    else
+	    m_deviceContext->RSSetState(m_rasterState1);
+}
+
+
 
 void VirtualDeviceDx11::Resize (int width, int height)
 {

@@ -11,13 +11,14 @@ public :
     virtual ~Shader();
 	virtual void   Release();
 	bool   Initialize(ID3D11Device* device, HWND hwnd, WCHAR* vsFileName, LPCSTR vsName, WCHAR* psFileName,  LPCSTR psName );
-	virtual void   Render(ID3D11DeviceContext* deviceContext);
+	virtual void   Render(ID3D11DeviceContext* deviceContext, bool state = true);
 protected :
 	virtual void  GetInputLayerout(D3D11_INPUT_ELEMENT_DESC**, int& ) =0;
     void HandleCompilingError(ID3D10Blob* ErrorMessage, WCHAR* FileName);
 protected:
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader*  m_pixelShader;
+	ID3D11PixelShader*  m_pixelShader1;
 	ID3D11InputLayout*  m_layout;
 };
 

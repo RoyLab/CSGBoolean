@@ -497,6 +497,7 @@ namespace CSG
 							int *markPtr;
 							for (int i = 0; i < 3; i++, ffItr++)
 							{
+                                if (!ffItr.is_valid()) break;
 								markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
 								if (*markPtr != 2)
 								{
@@ -523,7 +524,7 @@ namespace CSG
                                 points.clear();
                                 ParsingFace1(pMesh, curFace, pOctree->pMesh, points);
                             }
-							ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result);
+							ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result, &color);
 							pMesh->property(pMesh->MarkPropHandle, curFace) = 2; // processed
 						}
 					}
@@ -554,6 +555,7 @@ namespace CSG
 							int *markPtr;
 							for (int i = 0; i < 3; i++, ffItr++)
 							{
+                                if (!ffItr.is_valid()) break;
 								markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
 								if (*markPtr != 2)
 								{

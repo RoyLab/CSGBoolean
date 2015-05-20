@@ -98,7 +98,7 @@ namespace CSG
     }
 
 	void ParsingFace(MPMesh* pMesh, MPMesh::FaceHandle faceHandle, const TestTree* pTree,
-        Relation testRelation, MPMesh** meshList, std::vector<TMP_VInfo>& points, Octree* pOctree, GS::BaseMesh* pResult)
+        Relation testRelation, MPMesh** meshList, std::vector<TMP_VInfo>& points, Octree* pOctree, GS::BaseMesh* pResult, GS::float4* color)
 	{
         if (testRelation == REL_INSIDE) return;
 
@@ -267,7 +267,7 @@ namespace CSG
 #ifdef _DEBUG
 				countd2 ++;
 #endif
-				pResult->AddTriangle(v);
+				pResult->AddTriangle(v, *color);
             }
         }
         SAFE_RELEASE(dt);

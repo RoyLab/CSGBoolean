@@ -385,6 +385,7 @@ void FbxParser::ProcessCamera(FbxNode* pNode, GS::Camera& camera)
     if (lCamera)
 		lFarPlane = lCamera->GetFarPlane();
     bool bPerspectice =  lCamera->ProjectionType.Get() == FbxCamera::ePerspective ;
+    //bPerspectice = true;
 	cam.SetProjectionMode(bPerspectice);
 	cam.SetProjectionPlanes(lNearPlane, lFarPlane);
 	camera = cam;

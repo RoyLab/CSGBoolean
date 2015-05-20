@@ -436,6 +436,7 @@ void CGeomary3DView::OnOcteeShow()
     
 }
 
+int _renderState = 0;
 
 void CGeomary3DView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
@@ -445,6 +446,10 @@ void CGeomary3DView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	case 67:
 		CSG::SnapModel((GS::BaseMesh*)(Graphic()->GetModelMgr().mpResultMeshList[0]));
 		break;
+    case 68:
+        _renderState = (_renderState+1)%3;
+        mpGraphic->Frame();
+        break;
 	default:
 		break;
 	}
