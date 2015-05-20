@@ -2,7 +2,6 @@
 #include "MeshBoolOp.h"
 #include "CSGTree.h"
 #include "Bool.h"
-#pragma comment(lib, "CSGBoolean")
 
 namespace GS{
     

@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\GS\inc\BoolOp.h" />
+    <ClInclude Include="..\GS\inc\BSPBoolOp.h" />
+    <ClInclude Include="..\GS\inc\BSPOctTree.h" />
+    <ClInclude Include="..\GS\inc\BSPTree.h" />
+    <ClInclude Include="..\GS\inc\Camera.h" />
+    <ClInclude Include="..\GS\inc\CSGExprNode.h" />
+    <ClInclude Include="..\GS\inc\CSGMesh.h" />
+    <ClInclude Include="..\GS\inc\CSGTree.h" />
+    <ClInclude Include="..\GS\inc\FixedBSPTree.h" />
+    <ClInclude Include="..\GS\inc\FixedPlane.h" />
+    <ClInclude Include="..\GS\inc\FixedPlaneMesh.h" />
+    <ClInclude Include="..\GS\inc\FixedPolygon.h" />
+    <ClInclude Include="..\GS\inc\global.h" />
+    <ClInclude Include="..\GS\inc\Light.h" />
+    <ClInclude Include="..\GS\inc\MeshBoolOp.h" />
+    <ClInclude Include="..\GS\inc\NewMeshBoolOp.h" />
+    <ClInclude Include="..\GS\inc\OctTree.h" />
+    <ClInclude Include="..\GS\inc\Shader.h" />
+    <ClInclude Include="..\GS\inc\VirtualDeviceDx11.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BoolOp.cpp" />
+    <ClCompile Include="BSPBoolOp.cpp" />
+    <ClCompile Include="BSPOctTree.cpp" />
+    <ClCompile Include="BSPTree.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CSGMesh.cpp" />
+    <ClCompile Include="CSGTree.cpp" />
+    <ClCompile Include="FixedBSPTree.cpp" />
+    <ClCompile Include="FixedPlane.cpp" />
+    <ClCompile Include="FixedPlaneMesh.cpp" />
+    <ClCompile Include="FixedPolygon.cpp" />
+    <ClCompile Include="Global.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="MeshBoolOp.cpp" />
+    <ClCompile Include="NewMeshBoolOp.cpp" />
+    <ClCompile Include="OctTree.cpp" />
+    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="VirtualDeviceDx11.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4E33049F-D623-43D7-BA83-1DFABEB585F0}</ProjectGuid>
+    <RootNamespace>Boolean</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>C:\fade2d_v1.19\fadeRelease\include_fade2d;C:\Program Files %28x86%29\tbb42\include;$(BOOST_INCLUDEDIR);$(CGAL_DIR)\auxiliary\gmp\include;$(CGAL_DIR)\include\;$(DXSDK_DIR)\include;..\GS\inc;..\CSGBoolean;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(BOOST_ROOT)\lib32-msvc-11.0;$(CGAL_DIR)\lib\Debug;C:\work\geomary3D\GS\lib\Debug;$(DXSDK_DIR)\Lib\x86;C:\Program Files %28x86%29\tbb42\lib\ia32\vc11;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Program Files %28x86%29\tbb42\include;$(BOOST_INCLUDEDIR);$(CGAL_DIR)\auxiliary\gmp\include;$(CGAL_DIR)\include\;$(DXSDK_DIR)\include;..\GS\inc;..\CSGBoolean;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Program Files %28x86%29\tbb42\lib\ia32\vc11;C:/Program Files/CGAL-4.4/lib;$(BOOST_INCLUDEDIR)/lib32-msvc-11.0;$(DXSDK_DIR)\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

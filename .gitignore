@@ -9,6 +9,8 @@
 */Debug/
 */*/Release/
 */Release/
+Release/
+Debug/
 *.ipch
 *.vspx
 auxiliary/
