@@ -458,7 +458,7 @@ namespace CSG
 					color[3] = 1.0f;
 					color[0] = rand() / (float)RAND_MAX;
 					color[1] = rand() / (float)RAND_MAX;
-					color[2] = rand() / (float)RAND_MAX;
+					color[2] = 1.5f-color[0]-color[1];
 
 					// 初始化该种子对应的种子堆
 					seedQueueList.emplace();

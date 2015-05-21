@@ -39,8 +39,8 @@ public :
 	void ComputeOrthoRange (const Box3& bounds, double& min, double& max) const;
 	void SetMinMax (const double inflateFactor, const double min, const double max);
 	void MinMax(double& min, double& max) const;
-private:
-	float4x4 mViewMatrix;
+	
+    float4x4 mViewMatrix;
 	float4x4 mProjectionMatrix;
 	float3 mTarget;
 	float3 mEye;
@@ -49,7 +49,6 @@ private:
 	float  mFarPlane;
 	bool   mbPerspective;
 	
-
 };
 
 }

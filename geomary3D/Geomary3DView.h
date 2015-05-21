@@ -96,6 +96,8 @@ public:
     afx_msg void OnUpdateOctreeViewStatus(CCmdUI *pCmdUI);
     afx_msg void OnOcteeShow();
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+    afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+    afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 };
 
 #ifndef _DEBUG  // debug version in Geomary3DView.cpp

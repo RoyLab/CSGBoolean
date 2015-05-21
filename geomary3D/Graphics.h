@@ -35,6 +35,9 @@ public :
     void LocalizedBSPDifference();
     //                                       
     void ShowOctree(bool bShow);
+    bool Flip(float x, float y);
+    void SnapCam(int i);
+    void RecoverCam(int i);
 
 
     void Shutdown();

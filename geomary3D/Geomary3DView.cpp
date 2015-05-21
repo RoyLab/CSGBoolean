@@ -69,9 +69,15 @@ ON_UPDATE_COMMAND_UI(ID_LOCALIZED_BSP_DIFFERENCE, &CGeomary3DView::OnUpdateLocal
 ON_UPDATE_COMMAND_UI(ID_BUTTON2, &CGeomary3DView::OnUpdateOctreeViewStatus)
 ON_COMMAND(ID_BUTTON2, &CGeomary3DView::OnOcteeShow)
 ON_WM_KEYUP()
+ON_WM_MBUTTONDOWN()
+ON_WM_MBUTTONUP()
 END_MESSAGE_MAP()
 
 // CGeomary3DView construction/destruction
+
+static CPoint middlePoint;
+static bool middle = false;
+
 
 CGeomary3DView::CGeomary3DView()
 	:mbDrag(false)
@@ -205,6 +211,19 @@ void  CGeomary3DView::Render()
 		::ScreenToClient(GetSafeHwnd(), &point);
 		mpGraphic->UpdateOrbitView(point.x, point.y);
 	}
+    
+    if (middle)
+    {
+		POINT point;
+		GetCursorPos(&point);
+		::ScreenToClient(GetSafeHwnd(), &point);
+        mpGraphic->Flip(point.x-middlePoint.x, point.y-middlePoint.y);
+        middlePoint.x = point.x;
+        middlePoint.y = point.y;
+        //wchar_t str[32];
+        //swprintf_s(str, L"%d and %d\n", point.x-middlePoint.x, point.y-middlePoint.y);
+        //OutputDebugString(str);
+    }
 
 	mpGraphic->Frame();
 }
@@ -450,8 +469,35 @@ void CGeomary3DView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
         _renderState = (_renderState+1)%3;
         mpGraphic->Frame();
         break;
+    case 49:
+    case 50:
+    case 51:
+        mpGraphic->SnapCam(nChar-48);
+        break;
+    case 97:
+    case 98:
+    case 99:
+        mpGraphic->RecoverCam(nChar-96);
+        break;
 	default:
 		break;
 	}
 	CView::OnKeyUp(nChar, nRepCnt, nFlags);
+}
+
+
+void CGeomary3DView::OnMButtonDown(UINT nFlags, CPoint point)
+{
+    // TODO: Add your message handler code here and/or call default
+    middle = true;
+    middlePoint = point;
+    CView::OnMButtonDown(nFlags, point);
+}
+
+
+void CGeomary3DView::OnMButtonUp(UINT nFlags, CPoint point)
+{
+    // TODO: Add your message handler code here and/or call default
+    middle = false;
+    CView::OnMButtonUp(nFlags, point);
 }

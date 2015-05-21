@@ -38,18 +38,19 @@ CGraphics::CGraphics()
 	, mCursorPos(0, 0)
 {
 	m_pD3D =0;
-    //std::ifstream script("D:\\bool\\boolconfig.txt");
-    //if (!script) return;
-    //char eval[32];
-    //while (!script.eof())
-    //{
-    //    script.getline(eval, 32);
-    //    expression.emplace_back(eval);
-    //}
-    //script.close();
+    std::ifstream script("D:\\bool\\boolconfig.txt");
+    if (!script) return;
+    char eval[32];
+    while (!script.eof())
+    {
+        script.getline(eval, 32);
+        if (strlen(eval))
+            expression.emplace_back(eval);
+    }
+    script.close();
 
-    expression.emplace_back();
-    GetLoop(expression.back());
+    //expression.emplace_back();
+    //GetLoop(expression.back());
 }
 
 CGraphics::~CGraphics()
@@ -118,6 +119,106 @@ void  CGraphics::ResizeWindow(int width, int height)
     mCamera.ComputeFovProjectMatrix(PI/4.0f, (float)width/height, 0.01f, 1000.0f);
 }
 
+inline void recordVec4(std::ofstream& f, GS::float4& vec)
+{
+    f << vec.x << '\t';
+    f << vec.y << '\t';
+    f << vec.z << '\t';
+    f << vec.w << '\n';
+}
+
+inline void recoverVec4(std::ifstream& f, GS::float4& vec)
+{
+    f >> vec.x;
+    f >> vec.y;
+    f >> vec.z;
+    f >> vec.w;
+}
+
+void CGraphics::SnapCam(int i)
+{
+    char file[32];
+    sprintf_s(file, "D:\\bool\\cam%d.cam", i);
+    std::ofstream f(file);
+    if (!f) return;
+    auto vec = mCamera.Eye();
+    f << vec.x << '\t';
+    f << vec.y << '\t';
+    f << vec.z << '\n';
+
+    vec = mCamera.Target();
+    f << vec.x << '\t';
+    f << vec.y << '\t';
+    f << vec.z << '\n';
+
+    f << mCamera.mNearPlane << '\t';
+    f << mCamera.mFarPlane << '\t';
+    f << mCamera.mOrthoRange << '\t';
+    f << mCamera.mbPerspective << '\n';
+
+    auto vec2 = mCamera.mViewMatrix[0];
+    recordVec4(f, vec2);
+    vec2 = mCamera.mViewMatrix[1];
+    recordVec4(f, vec2);
+    vec2 = mCamera.mViewMatrix[2];
+    recordVec4(f, vec2);
+    vec2 = mCamera.mViewMatrix[3];
+    recordVec4(f, vec2);
+
+    vec2 = mCamera.mProjectionMatrix[0];
+    recordVec4(f, vec2);
+    vec2 = mCamera.mProjectionMatrix[1];
+    recordVec4(f, vec2);
+    vec2 = mCamera.mProjectionMatrix[2];
+    recordVec4(f, vec2);
+    vec2 = mCamera.mProjectionMatrix[3];
+    recordVec4(f, vec2);
+    
+    wchar_t str[] = L"Write Cam Succeeded!\n";
+    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), str, wcslen(str), 0, 0);
+
+    f.close();
+}
+
+void CGraphics::RecoverCam(int i)
+{
+    char file[32];
+    sprintf_s(file, "D:\\bool\\cam%d.cam", i);
+    std::ifstream f(file);
+    if (!f) return;
+    GS::float3 eye;
+    f >> eye.x;
+    f >> eye.y;
+    f >> eye.z;
+    mCamera.mEye = eye;
+
+    GS::float3 target;
+    f >> target.x;
+    f >> target.y;
+    f >> target.z;
+    mCamera.mTarget = target;
+
+    f >> mCamera.mNearPlane;
+    f >> mCamera.mFarPlane;
+    f >> mCamera.mOrthoRange;
+    f >> mCamera.mbPerspective;
+
+    recoverVec4(f, mCamera.mViewMatrix[0]);
+    recoverVec4(f, mCamera.mViewMatrix[1]);
+    recoverVec4(f, mCamera.mViewMatrix[2]);
+    recoverVec4(f, mCamera.mViewMatrix[3]);
+
+    recoverVec4(f, mCamera.mProjectionMatrix[0]);
+    recoverVec4(f, mCamera.mProjectionMatrix[1]);
+    recoverVec4(f, mCamera.mProjectionMatrix[2]);
+    recoverVec4(f, mCamera.mProjectionMatrix[3]);
+
+    wchar_t str[] = L"Import Cam Succeeded!\n";
+    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), str, wcslen(str), 0, 0);
+
+    f.close();
+}
+
 bool CGraphics::Frame()
 {
 	bool result;
@@ -136,6 +237,22 @@ bool CGraphics::Frame()
 }
 
 extern int _renderState;
+
+bool CGraphics::Flip(float x, float y)
+{
+    auto dir = mCamera.Direction();
+    auto up = mCamera.Up();
+    auto right = GS::normalize(GS::cross(dir, up));
+    auto up2 = GS::normalize(GS::cross(right, dir));
+
+    auto dright = right*0.01*x;
+    auto dup = up2*0.01*y;
+    auto diff = dright+dup;
+
+    mCenterPos += diff;
+    mCamera.SetPosition(mCamera.Eye()+diff, mCamera.Target()+diff);
+    return true;
+}
 
 bool CGraphics::Render()
 {
@@ -295,7 +412,7 @@ void CGraphics::ZoomView(short zDelta)
 	 
 		 float fPercent = 60/ 100.0;
         if (zDelta > 0) 
-            fPercent = -fPercent / 2.0;
+            fPercent = -fPercent / 4.0;
         fPercent += 1.0;  
 		float fieldWidth = mCamera.HorizontalExtent();
 		float fieldHeight = mCamera.VerticalExtent();
@@ -326,6 +443,9 @@ void CGraphics::UpdateOrbitView(int x, int y)
     double ax = (double)(dx) * pixelAngleScale;
     double ay = -(double)(dy) * pixelAngleScale;
 	mCamera.Orbit(mCenterPos, ax, ay);
+    //wchar_t str[32];
+    //swprintf_s(str, L"%f and %f\n", ax, ay);
+    //OutputDebugString(str);
 	mCursorPos.x  = x;
     mCursorPos.y = FlipYAxis(y);
       
