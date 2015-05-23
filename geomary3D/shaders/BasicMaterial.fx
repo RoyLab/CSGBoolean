@@ -87,17 +87,18 @@ PixelInputType VS(VertexInputType input)
 float4 PS(PixelInputType input) : SV_TARGET
 {
 	////return float4(1, 1, 1, 1);
-    float4 color = ambientColor;
+    float4 ocolor = saturate(input.color);
+    float4 color = ambientColor*ocolor;
 	//if (lightActive[0])
 	{
 		float lightCoef = saturate(-dot(input.normal, lightDirection[0].xyz));
-		color += lightCoef * input.color * diffuseColor[0];
+		color += lightCoef * ocolor * diffuseColor[0];
 
 	    float3 lightVec = normalize(-lightDirection[0].xyz);
 
 	    float3 halfVec = normalize(input.viewDirection+lightVec);
 	    float nx = saturate(dot(input.normal, halfVec)) +0.01;
-	    color += pow(nx, 2.0) * specularColor[0];
+	    color += pow(nx, 2.0) * specularColor[0]*ocolor;
 	}
 
 	//if (lightActive[1])

@@ -23,7 +23,8 @@ int countd1, countd2, countd3, countd4, countd5;
 
 
 //#define DEBUG_ISECT
-#define DEBUG_FLOOD
+//#define DEBUG_FLOOD
+//#define FIXED_COLOR
 
 #pragma warning(disable: 4800 4996)
 
@@ -220,6 +221,7 @@ namespace CSG
 
 	GS::BaseMesh* result;
     int fDebugMode = -1;
+    unsigned startId = 0;
     int percent = 100;
 
 	static GS::BaseMesh* BooleanOperation2(GS::CSGExprNode* input, HANDLE stdoutput, bool bd)
@@ -247,6 +249,7 @@ namespace CSG
                 dbFile >> fDebugMode;
 #ifdef DEBUG_FLOOD
                 dbFile >> percent;
+                dbFile >> startId;
 #endif
             }
             dbFile.close();
@@ -415,6 +418,29 @@ namespace CSG
 
 	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG)
 	{
+#ifdef FIXED_COLOR
+        std::ifstream cfile("D:\\bool\\color.ini");
+        if (!cfile)
+        {
+            StdOutput("Oh my God,0.0");
+            return;
+        }
+
+        GS::float4 colorBuffer[100];
+        int i = 100;
+        float r,g,b;
+        unsigned cstart = 0;
+        cfile >> cstart;
+        while (i--)
+        {
+            GS::float4& cc = colorBuffer[99-i];
+            cfile >> r >> g >> b;
+            cc.x = r; cc.y = g, cc.z = b;
+            cc.w = 1.0f;
+        }
+        unsigned icolor = cstart;
+        cfile.close();
+#endif
 		const int seeded = 4;
 
 		MPMesh *pMesh;
@@ -448,12 +474,15 @@ namespace CSG
 		{
 			pMesh = pOctree->pMesh[i0];
             int randid = rand()%pMesh->n_faces();
-			randid = 31+offset++; // 11784, banana32
+			//randid = 31+offset++; // 11784, banana32
 			//randid = 392; //buuny
             sprintf_s(str, "FLOOD:%u, rand:%d, faces:%d \n", i0, randid, pMesh->n_faces());
             randnumberout += str;
-			curFace = pMesh->face_handle(46);
-			AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
+#ifdef DEBUG_FLOOD
+            randid = startId;
+#endif
+			curFace = pMesh->face_handle(randid);//46, sphere
+			//AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
 			// 初始化第一个种子堆
 			seedQueueList.emplace();
 			SeedInfo &seedInfos = seedQueueList.back();
@@ -564,8 +593,11 @@ namespace CSG
                             }
                         }
                     }
+                    color = GS::float4(1,0,0,1);
 #endif
-
+#ifdef FIXED_COLOR
+                    color = colorBuffer[icolor++];
+#endif
 					if (curSurface && (curSurface->segs.size() || curSurface->coplanarTris.size())) // 复合模式
 					{
 						while (!faceQueue.empty())
@@ -628,7 +660,7 @@ namespace CSG
                             }
                             else
                             {
-							    AddTriangle(pMesh, curFace);
+							    AddTriangle(pMesh, curFace, GS::float4(0.1,0.1,0.1,1));
                             }
 #else
 							ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result, &color);
@@ -667,10 +699,10 @@ namespace CSG
                             }
                             else
                             {
-							    AddTriangle(pMesh, curFace);
+							    AddTriangle(pMesh, curFace, GS::float4(0.1,0.1,0.1,1));
                             }
 #else
-							if (curRelation == REL_SAME) AddTriangle(pMesh, curFace, color);
+							if (curRelation == REL_SAME) AddTriangle(pMesh, curFace);//AddTriangle(pMesh, curFace, color);
 #endif
 #endif
 							pMesh->property(pMesh->MarkPropHandle, curFace) = 2; // processed

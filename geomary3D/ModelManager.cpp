@@ -85,7 +85,7 @@ void CModelManager::CreateOctree()
     for (int i = 0; i < mpMeshList.size(); i ++)
         mpResultMeshList.push_back( mpMeshList[i]->Clone());
     GS::LineSet* pLineSet = new GS::LineSet();
-    pTree->CreateTreeGeometry(*pLineSet, GS::float4(0, 1, 0, 0.8));
+    pTree->CreateTreeGeometry(*pLineSet, GS::float4(0, 0, 0, 0.8));
     if (pLineSet->PrimitiveCount() >0)
         mpResultMeshList.push_back(pLineSet);
     delete pTree;

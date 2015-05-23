@@ -316,7 +316,7 @@ void Camera::SetMinMax (const double inflateFactor, const double min, const doub
 	double     distance    = Distance();
 	const float3 direction = Direction();
     
-    const double        kMinDistance = 0.001;
+    const double        kMinDistance = 0.01;
     float3 new_target,new_position;
 
     // shift camera target to middle of min and max

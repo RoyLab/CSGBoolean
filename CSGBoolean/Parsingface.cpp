@@ -267,7 +267,8 @@ namespace CSG
 #ifdef _DEBUG
 				countd2 ++;
 #endif
-				pResult->AddTriangle(v, *color);
+				pResult->AddTriangle(v);
+				//pResult->AddTriangle(v, *color);
             }
         }
         SAFE_RELEASE(dt);
