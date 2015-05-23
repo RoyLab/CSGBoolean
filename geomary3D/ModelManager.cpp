@@ -42,7 +42,21 @@ void CModelManager::Invalidate()
 	mbInvalidate = true;
 }
 
+void CModelManager::RenderOrigList(ID3D11Device* device,ID3D11DeviceContext* deviceContext)
+{
+    int selected = -1;
+    std::ifstream dbFile("D:\\bool\\DebugConfig.ini");
+    if (dbFile)
+    {
+        dbFile >> selected;
+    }
+    dbFile.close();
 
+	if (selected == -1)
+		return ; 
+	mpMeshList[selected]->Render(device, deviceContext, mbInvalidate);
+	mbInvalidate = false ;
+}
 
 void CModelManager::Render(ID3D11Device* device,ID3D11DeviceContext* deviceContext)
 {

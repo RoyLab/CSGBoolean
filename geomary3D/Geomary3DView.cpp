@@ -71,6 +71,12 @@ ON_COMMAND(ID_BUTTON2, &CGeomary3DView::OnOcteeShow)
 ON_WM_KEYUP()
 ON_WM_MBUTTONDOWN()
 ON_WM_MBUTTONUP()
+ON_COMMAND(ID_BUTTON_DEBUG, &CGeomary3DView::OnButtonDebug)
+ON_UPDATE_COMMAND_UI(ID_BUTTON_DEBUG, &CGeomary3DView::OnUpdateButtonDebug)
+//ON_COMMAND(ID_BUTTON_ORIG, &CGeomary3DView::OnButtonOrig)
+//ON_UPDATE_COMMAND_UI(ID_BUTTON_ORIG, &CGeomary3DView::OnUpdateButtonOrig)
+ON_COMMAND(ID_BUTTON_ORIG, &CGeomary3DView::OnButtonOrig)
+ON_UPDATE_COMMAND_UI(ID_BUTTON_ORIG, &CGeomary3DView::OnUpdateButtonOrig)
 END_MESSAGE_MAP()
 
 // CGeomary3DView construction/destruction
@@ -500,4 +506,33 @@ void CGeomary3DView::OnMButtonUp(UINT nFlags, CPoint point)
     // TODO: Add your message handler code here and/or call default
     middle = false;
     CView::OnMButtonUp(nFlags, point);
+}
+
+bool bDebug = false;
+bool bHintLine = false;
+
+void CGeomary3DView::OnButtonDebug()
+{
+    // TODO: Add your command handler code here
+    bDebug = !bDebug;
+}
+
+void CGeomary3DView::OnUpdateButtonDebug(CCmdUI *pCmdUI)
+{
+    // TODO: Add your command update UI handler code here
+    pCmdUI->SetCheck(bDebug);
+}
+
+
+void CGeomary3DView::OnButtonOrig()
+{
+    // TODO: Add your command handler code here
+    bHintLine = !bHintLine;
+}
+
+
+void CGeomary3DView::OnUpdateButtonOrig(CCmdUI *pCmdUI)
+{
+    // TODO: Add your command update UI handler code here
+    pCmdUI->SetCheck(bHintLine);
 }

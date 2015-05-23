@@ -16,7 +16,7 @@ namespace GS
 
 namespace CSG
 {
-    extern "C" CSG_API GS::BaseMesh* BooleanOperation(GS::CSGExprNode* input, HANDLE stdoutput);
+    extern "C" CSG_API GS::BaseMesh* BooleanOperation(GS::CSGExprNode* input, HANDLE stdoutput, bool db);
 	extern "C" CSG_API GS::BaseMesh* BooleanOperation_MultiThread(GS::CSGExprNode* input);
 	extern "C" CSG_API void SnapModel(const GS::BaseMesh* mesh);
 }

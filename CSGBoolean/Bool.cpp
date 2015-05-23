@@ -22,8 +22,11 @@ int countd1, countd2, countd3, countd4, countd5;
 #endif
 
 
+//#define DEBUG_ISECT
+#define DEBUG_FLOOD
 
 #pragma warning(disable: 4800 4996)
+
 
 
 namespace CSG
@@ -216,8 +219,10 @@ namespace CSG
 	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG);
 
 	GS::BaseMesh* result;
+    int fDebugMode = -1;
+    int percent = 100;
 
-	static GS::BaseMesh* BooleanOperation2(GS::CSGExprNode* input, HANDLE stdoutput)
+	static GS::BaseMesh* BooleanOperation2(GS::CSGExprNode* input, HANDLE stdoutput, bool bd)
 	{
 		_output= stdoutput;
         MPMesh** arrMesh = NULL;
@@ -234,6 +239,19 @@ namespace CSG
 		InitZone();
 		ISectTest(pOctree);
         DebugInfo("ISectTest", t0);
+        if (bd)
+        {
+            std::ifstream dbFile("D:\\bool\\DebugConfig.ini");
+            if (dbFile)
+            {
+                dbFile >> fDebugMode;
+#ifdef DEBUG_FLOOD
+                dbFile >> percent;
+#endif
+            }
+            dbFile.close();
+        }
+        else fDebugMode = -1;
 		FloodColoring(pOctree, pPosCSG);
         DebugInfo("FloodColoring", t0);
 
@@ -250,9 +268,9 @@ namespace CSG
 	}
 
 
-    extern "C" CSG_API GS::BaseMesh* BooleanOperation(GS::CSGExprNode* input, HANDLE stdoutput)
+    extern "C" CSG_API GS::BaseMesh* BooleanOperation(GS::CSGExprNode* input, HANDLE stdoutput, bool db)
     {
-		return BooleanOperation2(input, stdoutput);
+		return BooleanOperation2(input, stdoutput, db);
     }
 
     extern "C" CSG_API GS::BaseMesh* BooleanOperation_MultiThread(GS::CSGExprNode* input)
@@ -360,6 +378,22 @@ namespace CSG
 		return true;
 	}
 
+
+    	static void AddTriangle(MPMesh* pMesh, MPMesh::FaceHandle face)
+    {
+#ifdef _DEBUG
+		countd1 ++;
+#endif
+		GS::double3 v[3];
+		Vec3d *v0, *v1, *v2;
+		if (pMesh->bInverse) GetCorners(pMesh, face, v2, v1, v0);
+		else GetCorners(pMesh, face, v0, v1, v2);
+		v[0] = Vec3dToDouble3(*v0);
+		v[1] = Vec3dToDouble3(*v1);
+		v[2] = Vec3dToDouble3(*v2);
+		result->AddTriangle(v);
+    }
+
 	static void AddTriangle(MPMesh* pMesh, MPMesh::FaceHandle face, GS::float4& color)
     {
 #ifdef _DEBUG
@@ -374,7 +408,11 @@ namespace CSG
 		v[2] = Vec3dToDouble3(*v2);
 		result->AddTriangle(v, color);
     }
+
+
 	int offset = -5;
+
+
 	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG)
 	{
 		const int seeded = 4;
@@ -395,8 +433,18 @@ namespace CSG
 
         std::string randnumberout;
         char str[64];
-		for (unsigned i0 = 0; i0 < pOctree->nMesh; i0++)
-		//for (unsigned i0 = 0; i0 < 1; i0++)
+
+        unsigned ibegin, iend;
+        switch (fDebugMode)
+        {
+        case -1:
+            ibegin = 0; iend = pOctree->nMesh;
+            break;
+        default:
+            ibegin = fDebugMode; iend = ibegin+1;
+            break;
+        }
+		for (unsigned i0 = ibegin; i0 < iend; i0++)
 		{
 			pMesh = pOctree->pMesh[i0];
             int randid = rand()%pMesh->n_faces();
@@ -431,7 +479,10 @@ namespace CSG
 					randnumberout += str;
 				}
 			}
-
+#ifdef DEBUG_FLOOD
+            int maxLimit = int(percent/100.0 * pMesh->n_faces());
+            int faceCount = 0;
+#endif
 			while (!seedQueueList.empty())
 			{
 				// 选取一个种子堆
@@ -471,6 +522,49 @@ namespace CSG
 					curRelation = ParsingCSGTree(pMesh, curRelationTable, pOctree->nMesh, curTree, curTreeLeaves, testList); // 未检查testList
                     assert(!testList.size() || !testList.begin()->testTree->Parent);
 					curSurface = pMesh->property(pMesh->SurfacePropHandle, curFace);
+#ifdef DEBUG_ISECT
+                    if (curSurface && (curSurface->segs.size() || curSurface->coplanarTris.size())) // 复合模式
+                    {
+                        color = GS::float4(0,0,0,1);
+                        for (auto &pair1:curSurface->segs)
+                        {
+                            switch (pair1.first)
+                            {
+                            case 0:
+                                color.x = 1;
+                                break;
+                            case 1:
+                                color.y = 1;
+                                break;
+                            case 2:
+                                color.z = 1;
+                                break;
+                            default:
+                                break;
+                            }
+                        }
+                        if (curSurface->segs.size() < 2)
+                        {
+                            for (auto& pair2: curSurface->coplanarTris)
+                            {
+                                switch (pair2.first)
+                                {
+                                case 0:
+                                    color.x = 1;
+                                    break;
+                                case 1:
+                                    color.y = 1;
+                                    break;
+                                case 2:
+                                    color.z = 1;
+                                    break;
+                                default:
+                                    break;
+                                }
+                            }
+                        }
+                    }
+#endif
 
 					if (curSurface && (curSurface->segs.size() || curSurface->coplanarTris.size())) // 复合模式
 					{
@@ -518,13 +612,28 @@ namespace CSG
 									}
 								}
 							}
-
                             if (curRelation != REL_INSIDE || IsSeed)
                             {
                                 points.clear();
                                 ParsingFace1(pMesh, curFace, pOctree->pMesh, points);
                             }
+#ifdef DEBUG_ISECT
+							AddTriangle(pMesh, curFace, color);
+#else
+#ifdef DEBUG_FLOOD
+                            faceCount ++;
+                            if (faceCount < maxLimit)
+                            {
+							    ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result, &color);
+                            }
+                            else
+                            {
+							    AddTriangle(pMesh, curFace);
+                            }
+#else
 							ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result, &color);
+#endif
+#endif
 							pMesh->property(pMesh->MarkPropHandle, curFace) = 2; // processed
 						}
 					}
@@ -547,7 +656,23 @@ namespace CSG
 #endif
 
 							faceQueue.pop();
+#ifdef DEBUG_ISECT
+							AddTriangle(pMesh, curFace);
+#else
+#ifdef DEBUG_FLOOD
+                            faceCount ++;
+                            if (faceCount < maxLimit)
+                            {
+							    if (curRelation == REL_SAME) AddTriangle(pMesh, curFace, color);
+                            }
+                            else
+                            {
+							    AddTriangle(pMesh, curFace);
+                            }
+#else
 							if (curRelation == REL_SAME) AddTriangle(pMesh, curFace, color);
+#endif
+#endif
 							pMesh->property(pMesh->MarkPropHandle, curFace) = 2; // processed
 
 							// add neighbor

@@ -25,6 +25,8 @@ public:
 	void Clear();
 	void ClearResults();
 	void Invalidate();
+    
+	void RenderOrigList(ID3D11Device* device,ID3D11DeviceContext* deviceContext);
 	void Render(ID3D11Device* device,ID3D11DeviceContext* deviceContext);
 	int  GetPrimiaryCount() const ;
 	int  GetVertexCount() const ;

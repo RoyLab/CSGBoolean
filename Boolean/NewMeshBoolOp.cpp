@@ -1,6 +1,7 @@
 #include "NewMeshBoolOp.h"
 #include "Bool.h"
 #include <Windows.h>
+extern bool bDebug;
 
 namespace GS
 {
@@ -21,7 +22,7 @@ BoolOp* NewMeshBoolOp::GetInstance()
 
 BaseMesh* NewMeshBoolOp::DoCompute(CSGExprNode* node)
 {
-    return CSG::BooleanOperation(node, GetStdHandle(STD_OUTPUT_HANDLE));
+    return CSG::BooleanOperation(node, GetStdHandle(STD_OUTPUT_HANDLE), bDebug);
 }
 
 }

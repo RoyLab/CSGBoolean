@@ -98,6 +98,12 @@ public:
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
     afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
     afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
+    afx_msg void OnButtonDebug();
+    afx_msg void OnUpdateButtonDebug(CCmdUI *pCmdUI);
+//    afx_msg void OnButtonOrig();
+//    afx_msg void OnUpdateButtonOrig(CCmdUI *pCmdUI);
+    afx_msg void OnButtonOrig();
+    afx_msg void OnUpdateButtonOrig(CCmdUI *pCmdUI);
 };
 
 #ifndef _DEBUG  // debug version in Geomary3DView.cpp

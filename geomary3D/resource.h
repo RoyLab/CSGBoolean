@@ -56,13 +56,16 @@
 #define ID_LOCALIZED_BSP_DIFFERENCE     32792
 #define ID_BUTTON2                      32793
 #define ID_BUTTON3                      32794
+#define ID_BUTTON_DEBUG                 32794
+#define ID_BUTTON4                      32795
+#define ID_BUTTON_ORIG                  32795
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        314
-#define _APS_NEXT_COMMAND_VALUE         32795
+#define _APS_NEXT_COMMAND_VALUE         32796
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

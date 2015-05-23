@@ -32,7 +32,6 @@ void GetLoop(std::string& s)
 	}
 }
 
-
 CGraphics::CGraphics()
 	:mViewPortSize(0, 0)
 	, mCursorPos(0, 0)
@@ -253,6 +252,7 @@ bool CGraphics::Flip(float x, float y)
     mCamera.SetPosition(mCamera.Eye()+diff, mCamera.Target()+diff);
     return true;
 }
+extern bool bHintLine;
 
 bool CGraphics::Render()
 {
@@ -284,7 +284,12 @@ bool CGraphics::Render()
         Pass = false;
 	    mShader.Render( m_pD3D->GetDeviceContext(), Pass);
         m_pD3D->SetRenderState(Pass);
-	    mModelMgr.Render(m_pD3D->GetDevice(), m_pD3D->GetDeviceContext());
+
+        if (bHintLine)
+        {
+            mModelMgr.RenderOrigList(m_pD3D->GetDevice(), m_pD3D->GetDeviceContext());
+        }
+        else mModelMgr.Render(m_pD3D->GetDevice(), m_pD3D->GetDeviceContext());
     }
 
 	// Present the rendered scene to the screen.  
