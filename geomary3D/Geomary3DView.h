@@ -104,6 +104,7 @@ public:
 //    afx_msg void OnUpdateButtonOrig(CCmdUI *pCmdUI);
     afx_msg void OnButtonOrig();
     afx_msg void OnUpdateButtonOrig(CCmdUI *pCmdUI);
+    afx_msg void OnButtonExprBspLocal();
 };
 
 #ifndef _DEBUG  // debug version in Geomary3DView.cpp

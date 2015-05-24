@@ -7,6 +7,8 @@
 #include "OctTree.h"
 
 
+extern int _csgMode;
+
 CModelManager::CModelManager()
 	: mbInvalidate(false)
 {
@@ -176,7 +178,18 @@ void CModelManager::EvaluateBoolExpression(const std::string& expression)
     ClearResults();
     //if (mpMeshList.size() < 3)
     //    return ;
-    GS::BoolOp* pBoolOp = GS::BoolOpFactory::GetBoolOpObj(GS::eNewMeshBool);
+    GS::BoolOp* pBoolOp = nullptr;
+    switch (_csgMode)
+    {
+    case 0:
+        pBoolOp = GS::BoolOpFactory::GetBoolOpObj(GS::eNewMeshBool);
+        break;
+    case 1:
+        pBoolOp = GS::BoolOpFactory::GetBoolOpObj(GS::eLBSPBool);
+        break;
+    default:
+        break;
+    }
     GS::BaseMesh* pResult = pBoolOp->Execute(mpMeshList,expression);
 	if (pResult )
         mpResultMeshList.push_back(pResult);

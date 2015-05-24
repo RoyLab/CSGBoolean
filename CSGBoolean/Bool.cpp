@@ -232,6 +232,7 @@ namespace CSG
         int nMesh = -1;
 		StdOutput("Start:");
         t0 = clock();
+        auto t = t0;
         CSGTree* pCSGTree = ConvertCSGTree(input, &arrMesh, &nMesh);
 		CSGTree* pPosCSG = ConvertToPositiveTree(pCSGTree);
 		delete pCSGTree;
@@ -266,7 +267,10 @@ namespace CSG
 		for (int i = 0; i < nMesh; i++)
 			delete arrMesh[i];
 		delete [] arrMesh;
-
+        auto k = clock()-t;
+        char ch[32];
+        wsprintf(ch, "time: %d\n", k);
+        StdOutput(ch);
 		return result;
 	}
 

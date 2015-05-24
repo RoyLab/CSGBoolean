@@ -39,10 +39,10 @@ CGraphics::CGraphics()
 	m_pD3D =0;
     std::ifstream script("D:\\bool\\boolconfig.txt");
     if (!script) return;
-    char eval[32];
+    char eval[1000];
     while (!script.eof())
     {
-        script.getline(eval, 32);
+        script.getline(eval, 1000);
         if (strlen(eval))
             expression.emplace_back(eval);
     }

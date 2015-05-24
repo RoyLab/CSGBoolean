@@ -244,8 +244,8 @@ void BSPOctree::BSPOperation(BaseMesh *mesh1, BaseMesh *mesh2, BaseMesh** output
     auto t1 = clock();
     long t = t1-t0;
     wchar_t ch[32];
-    wsprintf(ch, L"time: %d", t);
-    MessageBox(0, ch, L"time", 0);
+    wsprintf(ch, L"time: %d\n", t);
+    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), ch, wcslen(ch), 0, 0);
 }
 
 BaseMesh* BSPOctree::CollectPolygons(BaseMesh* mesh1, BaseMesh* mesh2)

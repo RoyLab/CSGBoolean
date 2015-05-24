@@ -7,6 +7,8 @@
 #include <iostream>
 #include <ctime>
 #include "BSPOctTree.h"
+#include <stack>
+#include <cctype>
 
 namespace GS{
 
@@ -208,12 +210,17 @@ BaseMesh* LBSPBoolOp::ComputeBoolean(BaseMesh* mesh1,  BaseMesh* mesh2, BOOL_OP 
     switch (op)
     {
         case eUnion:
+            if (!mesh1) return mesh2;
+            if (!mesh2) return mesh1;
             BSPOp = FixedBSPTree::OP_UNION;
             break;
         case eIntersect:
+            if (!mesh1 || !mesh2) return NULL;
             BSPOp = FixedBSPTree::OP_INTERSECT;
             break;
         case eDiff:
+            if (!mesh1) return NULL;
+            if (!mesh2) return mesh1;
             BSPOp = FixedBSPTree::OP_DIFFERENCE;
             break;
         default :
@@ -228,7 +235,61 @@ BaseMesh* LBSPBoolOp::ComputeBoolean(BaseMesh* mesh1,  BaseMesh* mesh2, BOOL_OP 
 
 BaseMesh*  LBSPBoolOp::Evalute(std::vector<BaseMesh*>& meshList, std::string& postfix) 
 {
-    return NULL;
+    std::stack<BaseMesh*> temp;
+    std::vector<BaseMesh*> garbage;
+
+    auto c0 = clock();
+    for (unsigned i = 0; i < postfix.size(); i ++)
+    {
+        if (postfix[i] == ' ') continue;
+        if (isdigit(postfix[i]))
+        {
+            std::string index;
+            index += postfix[i];
+            while (isdigit(postfix[++i]))
+                index += postfix[i];
+
+            temp.push(meshList[atoi(index.c_str())]);
+            i--;
+        }
+        else 
+        {
+            BaseMesh *B = temp.top();
+            temp.pop();
+            BaseMesh *A = temp.top(), *res;
+            temp.pop();
+            switch (postfix[i])
+            {
+            case '+':
+                res = ComputeBoolean(A, B, eUnion);
+                break;
+            case '-':
+                res = ComputeBoolean(A, B, eDiff);
+                break;
+            case '*':
+                res = ComputeBoolean(A, B, eIntersect);
+                break;
+            default:
+                assert(0);
+                break;
+            }
+            temp.push(res);
+            garbage.push_back(res);
+        }
+    }
+    auto t = clock()-c0;
+    wchar_t ch[32];
+    wsprintf(ch, L"time: %d\n", t);
+    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), ch, wcslen(ch), 0, 0);
+    BaseMesh* finalres = garbage.back();
+    garbage.pop_back();
+
+    for (auto itr: garbage)
+    {
+        if (itr) delete itr;
+    }
+
+    return finalres;
 }
 
 

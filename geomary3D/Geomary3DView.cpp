@@ -77,13 +77,14 @@ ON_UPDATE_COMMAND_UI(ID_BUTTON_DEBUG, &CGeomary3DView::OnUpdateButtonDebug)
 //ON_UPDATE_COMMAND_UI(ID_BUTTON_ORIG, &CGeomary3DView::OnUpdateButtonOrig)
 ON_COMMAND(ID_BUTTON_ORIG, &CGeomary3DView::OnButtonOrig)
 ON_UPDATE_COMMAND_UI(ID_BUTTON_ORIG, &CGeomary3DView::OnUpdateButtonOrig)
+ON_COMMAND(ID_BUTTON_EXPR_BSP_LOCAL, &CGeomary3DView::OnButtonExprBspLocal)
 END_MESSAGE_MAP()
 
 // CGeomary3DView construction/destruction
 
 static CPoint middlePoint;
 static bool middle = false;
-
+int _csgMode = 0;
 
 CGeomary3DView::CGeomary3DView()
 	:mbDrag(false)
@@ -357,6 +358,7 @@ void CGeomary3DView::OnVisualstyle()
 void CGeomary3DView::OnBoolExpression()
 {
     // TODO: Add your command handler code here
+    _csgMode = 0;
     mpGraphic->EvaluateBoolExpression();
 }
 
@@ -535,4 +537,12 @@ void CGeomary3DView::OnUpdateButtonOrig(CCmdUI *pCmdUI)
 {
     // TODO: Add your command update UI handler code here
     pCmdUI->SetCheck(bHintLine);
+}
+
+
+void CGeomary3DView::OnButtonExprBspLocal()
+{
+    // TODO: Add your command handler code here
+    _csgMode = 1;
+    mpGraphic->EvaluateBoolExpression();
 }
