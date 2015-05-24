@@ -499,7 +499,7 @@ namespace CSG
 		return REL_UNKNOWN;
 	}
 
-	static Relation CompressCSGNodeIteration(CSGTreeNode*& root)
+	Relation CompressCSGNodeIteration(CSGTreeNode*& root)
 	{
 		if (IsLeaf(root)) return root->relation;
 
@@ -614,19 +614,14 @@ namespace CSG
 		return REL_NOT_AVAILABLE;
 	}
 
-	static inline Relation CompressCSGNode(CSGTreeNode* root)
-	{
-		CSGTreeNode* parent = root->Parent;
-		root->Parent = nullptr;
-		Relation res = CompressCSGNodeIteration(root);
-		root->Parent = parent;
-		return res;
-	}
 
 	Relation ParsingCSGTree(MPMesh* pMesh, Relation* tab, unsigned nMesh, CSGTreeNode* curTree, CSGTreeNode** leaves, TestTree& output)
 	{
 		for (unsigned i = 0; i < nMesh; i++)
-			leaves[i]->relation = tab[i];
+        {
+            if (leaves[i])
+			    leaves[i]->relation = tab[i];
+        }
 
 		CSGTreeNode *seed = leaves[pMesh->ID], *comp;
 		int checkRel;

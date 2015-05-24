@@ -65,6 +65,7 @@ namespace CSG
     inline bool IsLeaf(CSGTreeNode* node) {return !(node->pLeft && node->pRight);}
     CSGTree* copy(const CSGTree* thiz);
     CSGTreeNode* copy2(const CSGTreeNode* thiz, CSGTreeNode** leafList);
+	Relation CompressCSGNodeIteration(CSGTreeNode*& root);
 
 	/** 
 	if it is a left child, return negative

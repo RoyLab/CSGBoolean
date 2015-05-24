@@ -485,7 +485,8 @@ namespace CSG
 #ifdef DEBUG_FLOOD
             randid = startId;
 #endif
-			curFace = pMesh->face_handle(randid);//46, sphere
+			curFace = pMesh->face_handle(0);//46, sphere
+            
 			//AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
 			// 初始化第一个种子堆
 			seedQueueList.emplace();
@@ -503,15 +504,32 @@ namespace CSG
 
 			GetCorners(pMesh, curFace, v0, v1, v2);
 			Vec3d bc = (*v0+*v1+*v2)/3.0;
+            // 初始化独有的树
+            CSGTreeNode* curTree0 = copy2(pPosCSG->pRoot, curTreeLeaves);
+
 			for (unsigned i = 0; i < pOctree->nMesh; i++)
 			{
 				if (seedInfos.relation[i] == REL_UNKNOWN)
 				{
+                    bool IsInverse = pOctree->pMesh[i]->bInverse;
+                    if (!pOctree->pMesh[i]->BBox.Intersects(pMesh->BBox))
+                    {
+                        // must be out
+                        if (!IsInverse) curTreeLeaves[i]->relation = REL_OUTSIDE;
+                        else curTreeLeaves[i]->relation = REL_INSIDE;
+                        seedInfos.relation[i] = REL_NOT_AVAILABLE;
+                        continue;
+                    }
+
 					seedInfos.relation[i] = PolyhedralInclusionTest(bc, pOctree, i, pOctree->pMesh[i]->bInverse);
 					//sprintf_s(str, "PointInOut:%d, prim:%d, relation:%d \n", randid, i, seedInfos.relation[i]);
-					randnumberout += str;
+					//randnumberout += str;
 				}
 			}
+
+            auto rel0 = CompressCSGNodeIteration(curTree0);
+            if (rel0 != REL_NOT_AVAILABLE) continue;
+
 #ifdef DEBUG_FLOOD
             int maxLimit = int(percent/100.0 * pMesh->n_faces());
             int faceCount = 0;
@@ -550,7 +568,8 @@ namespace CSG
 
 					// 生成关系树
 					// TO-DO:通过检查可以减少这个树所需要的生成(ABC理论)
-                    curTree = copy2(pPosCSG->pRoot, curTreeLeaves);
+                    memset(curTreeLeaves, 0, sizeof(CSGTreeNode*)*pOctree->nMesh);
+                    curTree = copy2(curTree0, curTreeLeaves);
                     testList.clear();
 					curRelation = ParsingCSGTree(pMesh, curRelationTable, pOctree->nMesh, curTree, curTreeLeaves, testList); // 未检查testList
                     assert(!testList.size() || !testList.begin()->testTree->Parent);
@@ -741,6 +760,7 @@ namespace CSG
 				}
 				seedQueueList.pop();
 			}
+            delete curTree0;
 		}
         //StdOutput(randnumberout.c_str());
         delete [] curTreeLeaves;

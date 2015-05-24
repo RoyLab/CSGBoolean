@@ -290,20 +290,6 @@ namespace CSG
 			assert(triCur);
 			MarkNARelation(triCur, output);
 		}
-		//else if (!triCur || (!triCur->coplanarTris.size() && !triCur->segs.size()))
-  //      {
-  //          Vec3d *g[3];
-  //          GetCorners(pMesh, curFace, g[0], g[1], g[2]);
-  //          auto bc = (*g[0]+*g[1]+*g[2])/3.0;
-		//	for (auto& pair: triSeed->segs)
-		//		output[pair.first] = PolyhedralInclusionTest(bc, pOctree, pair.first, pOctree->pMesh[pair.first]->bInverse);
-
-  //          for (auto& pair2: triSeed->coplanarTris)
-  //          {
-  //              if (output[pair2.first] == REL_NOT_AVAILABLE)
-  //                  output[pair2.first] = PolyhedralInclusionTest(bc, pOctree, pair2.first, pOctree->pMesh[pair2.first]->bInverse);;
-  //          }
-  //      }
         else
 		{
 			int index = TestNeighborIndex(pMesh, seedFace, curFace);
@@ -328,18 +314,23 @@ namespace CSG
 			Point2 testPoint;
 			testPoint.set(p[a].x()+p[b].x()-p[index].x(), p[a].y()+p[b].y()-p[index].y());
 
+            // 首先用BSP把所有的关系都弄出来
 			for (auto& pair: triSeed->segs)
 				output[pair.first] = BSP2DInOutTest(pair.second.bsp, &testPoint);
 
+            // 如果存在共面，那么BSP的测量是不准确的，所以置0
             for (auto& pair2: triSeed->coplanarTris)
             {
                 if (output[pair2.first] == REL_NOT_AVAILABLE)
                     output[pair2.first] = REL_UNKNOWN;
             }
 
+            // 对所有的相交元置-1
 			if (triCur) MarkNARelation(triCur, output);
 
             std::vector<unsigned> errorList;
+            // 这个时候，按道理来说，所有的关系已经确定
+            // 但因为存在误差，可能存在为0的关系
             for (auto& pair2: triSeed->coplanarTris)
             {
                 if (output[pair2.first] == REL_UNKNOWN)

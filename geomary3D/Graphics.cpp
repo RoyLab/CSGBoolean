@@ -47,9 +47,6 @@ CGraphics::CGraphics()
             expression.emplace_back(eval);
     }
     script.close();
-
-    //expression.emplace_back();
-    //GetLoop(expression.back());
 }
 
 CGraphics::~CGraphics()
@@ -340,6 +337,9 @@ void CGraphics::Intersect()
      bool flag = false;
      static unsigned count = 0;
      mModelMgr.EvaluateBoolExpression(expression[count]);
+     //std::string expr;
+     //GetLoop(expr);
+     //mModelMgr.EvaluateBoolExpression(expr);
      count = (count+1)%expression.size();
  }
 
