@@ -28,7 +28,6 @@
 #define new DEBUG_NEW
 #endif
 
-
 // CGeomary3DView
 
 IMPLEMENT_DYNCREATE(CGeomary3DView, CView)

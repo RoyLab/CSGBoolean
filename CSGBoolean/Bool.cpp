@@ -485,7 +485,7 @@ namespace CSG
 #ifdef DEBUG_FLOOD
             randid = startId;
 #endif
-			curFace = pMesh->face_handle(0);//46, sphere
+			curFace = pMesh->face_handle(randid);//46, sphere
             
 			//AddTriangle(pMesh, curFace, GS::float4(1,0,0,1));
 			// 初始化第一个种子堆
