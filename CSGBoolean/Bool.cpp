@@ -1,7 +1,6 @@
 #include "precompile.h"
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include "MPMesh.h"
-#define CSG_EXPORTS
 #include "Bool.h"
 #include <ctime>
 #include <list>
@@ -27,7 +26,6 @@ int countd1, countd2, countd3, countd4, countd5;
 //#define FIXED_COLOR
 
 #pragma warning(disable: 4800 4996)
-
 
 
 namespace CSG

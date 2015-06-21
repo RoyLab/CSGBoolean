@@ -9,6 +9,7 @@
 #include "BSPOctTree.h"
 #include <stack>
 #include <cctype>
+#include <Bool.h>
 
 namespace GS{
 
@@ -233,7 +234,91 @@ BaseMesh* LBSPBoolOp::ComputeBoolean(BaseMesh* mesh1,  BaseMesh* mesh2, BOOL_OP 
     return result;
 }
 
-BaseMesh*  LBSPBoolOp::Evalute(std::vector<BaseMesh*>& meshList, std::string& postfix) 
+CSG::MPMesh2* LBSPBoolOp::ComputeBoolean2(CSG::MPMesh2* mesh1,  CSG::MPMesh2* mesh2, BOOL_OP op)
+{
+    int opnum = -1;
+    switch (op)
+    {
+    case GS::eUnion:
+        opnum = 0;
+        break;
+    case GS::eIntersect:
+        opnum = 1;
+        break;
+    case GS::eDiff:
+        opnum = 2;
+        break;
+    default:
+        break;
+    }
+    return CSG::BooleanOperationFeito(mesh1, mesh2, opnum, GetStdHandle(STD_OUTPUT_HANDLE));
+}
+
+BaseMesh*  LBSPBoolOp::Evalute(std::vector<BaseMesh*>& meshList, std::string& postfix)
+{
+    return Evalute2(meshList, postfix);
+}
+
+BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& postfix)
+{
+    std::stack<CSG::MPMesh2*> temp;
+    std::vector<CSG::MPMesh2*> garbage;
+
+    auto c0 = clock();
+    for (unsigned i = 0; i < postfix.size(); i ++)
+    {
+        if (postfix[i] == ' ') continue;
+        if (isdigit(postfix[i]))
+        {
+            std::string index;
+            index += postfix[i];
+            while (isdigit(postfix[++i]))
+                index += postfix[i];
+
+            temp.push(CSG::Convert2MPMesh2(meshList[atoi(index.c_str())]));
+            i--;
+        }
+        else 
+        {
+            CSG::MPMesh2 *B = temp.top();
+            temp.pop();
+            CSG::MPMesh2 *A = temp.top(), *res;
+            temp.pop();
+            switch (postfix[i])
+            {
+            case '+':
+                res = ComputeBoolean2(A, B, eUnion);
+                break;
+            case '-':
+                res = ComputeBoolean2(A, B, eDiff);
+                break;
+            case '*':
+                res = ComputeBoolean2(A, B, eIntersect);
+                break;
+            default:
+                assert(0);
+                break;
+            }
+            temp.push(res);
+            garbage.push_back(res);
+        }
+    }
+    auto t = clock()-c0;
+    wchar_t ch[32];
+    wsprintf(ch, L"time: %d\n", t);
+    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), ch, wcslen(ch), 0, 0);
+    BaseMesh* finalres = CSG::Convert2BaseMesh2(garbage.back());
+    garbage.pop_back();
+
+    for (auto itr: garbage)
+    {
+        if (itr) delete itr;
+    }
+
+    return finalres;
+}
+
+BaseMesh*  LBSPBoolOp::Evalute1(std::vector<BaseMesh*>& meshList, std::string& postfix) 
 {
     std::stack<BaseMesh*> temp;
     std::vector<BaseMesh*> garbage;

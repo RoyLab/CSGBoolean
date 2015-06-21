@@ -2,6 +2,12 @@
 #define _BSP_BOOL_OP_H
 #include "BoolOp.h"
 
+namespace CSG
+{
+    struct MPMesh2;
+}
+
+
 namespace GS{
 
 	class FixedPlaneMesh;
@@ -29,7 +35,10 @@ public :
     virtual ~LBSPBoolOp();
 protected:
     virtual BaseMesh* ComputeBoolean(BaseMesh* mesh1,  BaseMesh* mesh2, BOOL_OP op);
+    CSG::MPMesh2* ComputeBoolean2(CSG::MPMesh2* mesh1,  CSG::MPMesh2* mesh2, BOOL_OP op);
     virtual BaseMesh*  Evalute(std::vector<BaseMesh*>& meshList, std::string& postfix) ;
+    virtual BaseMesh*  Evalute1(std::vector<BaseMesh*>& meshList, std::string& postfix) ;
+    virtual BaseMesh*  Evalute2(std::vector<BaseMesh*>& meshList, std::string& postfix) ;
     
 private :
     LBSPBoolOp() {};

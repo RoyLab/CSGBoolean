@@ -336,10 +336,10 @@ void CGraphics::Intersect()
  {
      bool flag = false;
      static unsigned count = 0;
-     //mModelMgr.EvaluateBoolExpression(expression[count]);
-     std::string expr;
-     GetLoop(expr);
-     mModelMgr.EvaluateBoolExpression(expr);
+     mModelMgr.EvaluateBoolExpression(expression[count]);
+     //std::string expr;
+     //GetLoop(expr);
+     //mModelMgr.EvaluateBoolExpression(expr);
      count = (count+1)%expression.size();
  }
 

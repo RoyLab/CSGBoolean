@@ -42,6 +42,9 @@
     <ClCompile Include="BSP2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FeitoBool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h">
