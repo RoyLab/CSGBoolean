@@ -4,6 +4,7 @@
 #include "MPMesh.h"
 #include "BinaryTree.h"
 #include <map>
+#include "COctree.h"
 
 namespace CSG
 {
@@ -12,7 +13,6 @@ namespace CSG
 	struct ISectTriangle;
 	struct ISVertexInfo;
 	struct BSP2D;
-    struct Octree;
 
 	typedef Vec3d Line2D;
 	typedef std::list<ISectTriangle>::iterator	ISectTriItr;
@@ -33,7 +33,7 @@ namespace CSG
 
 	struct ISVertexInfo
 	{
-		MPMesh::VertexHandle	 pos;
+		MPMeshKernel::VertexHandle	 pos;
 		ISVertexItr	next;
 		int Id;
 
@@ -99,9 +99,9 @@ namespace CSG
 	void GetLocation(ISVertexInfo* info, Vec3d& vec);
 
 	void ParsingFace1(MPMesh* pMesh, MPMesh::FaceHandle faceHandle, MPMesh** meshList, std::vector<TMP_VInfo>& points);
-	void ParsingFace(MPMesh*, MPMesh::FaceHandle, const TestTree*, Relation, MPMesh**, std::vector<TMP_VInfo>& points, Octree* pOctree, GS::BaseMesh*, GS::float4* color);
+	void ParsingFace(MPMesh*, MPMesh::FaceHandle, const TestTree*, Relation, MPMesh**, std::vector<TMP_VInfo>& points, Octree<>* pOctree, GS::BaseMesh*, GS::float4* color);
 	void GetRelationTable(MPMesh* pMesh, MPMesh::FaceHandle curFace, 
-		MPMesh::FaceHandle seedFace, Relation* relationSeed, unsigned nMesh, Octree* pOctree, Relation*& output);
+		MPMesh::FaceHandle seedFace, Relation* relationSeed, unsigned nMesh, Octree<>* pOctree, Relation*& output);
 	bool CompareRelationSpace();
 
 	inline void MarkNARelation(ISectTriangle* tri, Relation* relation, Relation mark = REL_NOT_AVAILABLE)

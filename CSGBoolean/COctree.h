@@ -44,7 +44,7 @@ namespace CSG
 	//typedef bool SimpleData;
 	//typedef CSGTree ComplexData;
 
-	typedef std::map<unsigned, std::vector<MPMesh::FaceHandle>> TriTableT;
+	typedef std::map<unsigned, std::vector<MPMeshKernel::FaceHandle>> TriTableT;
 
     struct OctreeNode
     {
@@ -75,19 +75,21 @@ namespace CSG
 
     //typedef std::vector<std::map<unsigned, CarvedInfo>> TriangleRecord; // may be better as a vector
 
+    template <class Mesh = MPMesh>
     struct Octree
     {
         OctreeNode *Root;
         
-        MPMesh**		pMesh;
+        Mesh**		pMesh;
         unsigned		nMesh;
 
 		Octree();
 		~Octree();
     };
 
-    Octree* BuildOctree(MPMesh** meshList, unsigned nMesh);
-    Relation PolyhedralInclusionTest(Vec3d& point, Octree* pOctree, unsigned meshId, bool = false);
+    Octree<MPMesh2>* BuildOctree2(MPMesh2** meshList, unsigned nMesh);
+    Octree<>* BuildOctree(MPMesh** meshList, unsigned nMesh);
+    Relation PolyhedralInclusionTest(Vec3d& point, Octree<>* pOctree, unsigned meshId, bool = false);
 
     inline bool IsLeaf(OctreeNode* node) {return !node->Child;}
 

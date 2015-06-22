@@ -98,7 +98,7 @@ namespace CSG
     }
 
 	void ParsingFace(MPMesh* pMesh, MPMesh::FaceHandle faceHandle, const TestTree* pTree,
-        Relation testRelation, MPMesh** meshList, std::vector<TMP_VInfo>& points, Octree* pOctree, GS::BaseMesh* pResult, GS::float4* color)
+        Relation testRelation, MPMesh** meshList, std::vector<TMP_VInfo>& points, Octree<>* pOctree, GS::BaseMesh* pResult, GS::float4* color)
 	{
         if (testRelation == REL_INSIDE) return;
 
@@ -275,7 +275,7 @@ namespace CSG
 	}
 
 	void GetRelationTable(MPMesh* pMesh, MPMesh::FaceHandle curFace, MPMesh::FaceHandle seedFace, 
-		Relation* relationSeed, unsigned nMesh, Octree* pOctree, Relation*& output)
+		Relation* relationSeed, unsigned nMesh, Octree<>* pOctree, Relation*& output)
 	{
 		// 讨论相邻的两个三角形，如何从一个三角形导出另一个三角形的关系表的问题
 		output = new Relation[nMesh];

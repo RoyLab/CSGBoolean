@@ -35,7 +35,7 @@ namespace CSG
 	HANDLE _output;
 	clock_t t0;
 
-    static void GetLeafNodes(OctreeNode* pNode, std::list<OctreeNode*>& leaves, int NodeType);
+    void GetLeafNodes(OctreeNode* pNode, std::list<OctreeNode*>& leaves, int NodeType);
 
 	void StdOutput(const char* str)
 	{
@@ -53,7 +53,7 @@ namespace CSG
 	}
 
 
-	static void RelationTest(OctreeNode* pNode, Octree* pOctree, std::map<unsigned, Relation>& famap)
+	static void RelationTest(OctreeNode* pNode, Octree<>* pOctree, std::map<unsigned, Relation>& famap)
 	{
 		for (auto &pair: pNode->DiffMeshIndex) pair.Rela = famap[pair.ID];
 
@@ -74,13 +74,13 @@ namespace CSG
 		}
 	}
 
-	static void RelationTest(Octree* pOctree)
+	static void RelationTest(Octree<>* pOctree)
 	{
 		std::map<unsigned, Relation> relmap;
 		RelationTest(pOctree->Root, pOctree, relmap);
 	}
 
-	void ISectTest(Octree* pOctree)
+	void ISectTest(Octree<>* pOctree)
 	{
 		assert(pOctree);
 		std::list<OctreeNode*> leaves;
@@ -215,7 +215,7 @@ namespace CSG
 		}
 	}
 
-	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG);
+	void FloodColoring(Octree<>* pOctree, CSGTree* pPosCSG);
 
 	GS::BaseMesh* result;
     int fDebugMode = -1;
@@ -235,7 +235,7 @@ namespace CSG
 		CSGTree* pPosCSG = ConvertToPositiveTree(pCSGTree);
 		delete pCSGTree;
         DebugInfo("Convert", t0);
-        Octree* pOctree = BuildOctree(arrMesh, nMesh);
+        Octree<>* pOctree = BuildOctree(arrMesh, nMesh);
         DebugInfo("BuildTree", t0);
 		InitZone();
 		ISectTest(pOctree);
@@ -297,7 +297,7 @@ namespace CSG
 	}
 
 
-    static void GetLeafNodes(OctreeNode* pNode, std::list<OctreeNode*>& leaves, int NodeType)
+    void GetLeafNodes(OctreeNode* pNode, std::list<OctreeNode*>& leaves, int NodeType)
     {
         if (pNode == NULL) return;
 
@@ -418,7 +418,7 @@ namespace CSG
 	int offset = -5;
 
 
-	void FloodColoring(Octree* pOctree, CSGTree* pPosCSG)
+	void FloodColoring(Octree<>* pOctree, CSGTree* pPosCSG)
 	{
 #ifdef FIXED_COLOR
         std::ifstream cfile("D:\\bool\\color.ini");

@@ -262,7 +262,6 @@ BaseMesh*  LBSPBoolOp::Evalute(std::vector<BaseMesh*>& meshList, std::string& po
 BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& postfix)
 {
     std::stack<CSG::MPMesh2*> temp;
-    std::vector<CSG::MPMesh2*> garbage;
 
     auto c0 = clock();
     for (unsigned i = 0; i < postfix.size(); i ++)
@@ -299,21 +298,17 @@ BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& p
                 assert(0);
                 break;
             }
+            ReleaseMPMesh2(A);
+            ReleaseMPMesh2(B);
             temp.push(res);
-            garbage.push_back(res);
         }
     }
     auto t = clock()-c0;
     wchar_t ch[32];
     wsprintf(ch, L"time: %d\n", t);
     WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), ch, wcslen(ch), 0, 0);
-    BaseMesh* finalres = CSG::Convert2BaseMesh2(garbage.back());
-    garbage.pop_back();
-
-    for (auto itr: garbage)
-    {
-        if (itr) delete itr;
-    }
+    BaseMesh* finalres = CSG::Convert2BaseMesh2(temp.top());
+    ReleaseMPMesh2(temp.top());
 
     return finalres;
 }

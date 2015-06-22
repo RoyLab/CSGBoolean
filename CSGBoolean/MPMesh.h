@@ -15,11 +15,15 @@ namespace CSG
 {
 	using OpenMesh::Vec3d;
 	struct ISectTriangle;
+    class FeitoISectZone;
 
 	struct MyTraits : OpenMesh::DefaultTraits
 	{
 		typedef Vec3d Point;
 		typedef Vec3d Normal;
+        VertexAttributes(OpenMesh::Attributes::Status);
+        FaceAttributes(OpenMesh::Attributes::Status);
+        EdgeAttributes(OpenMesh::Attributes::Status);
 	};
 
 	typedef OpenMesh::TriMesh_ArrayKernelT<MyTraits>  MPMeshKernel;
@@ -42,8 +46,33 @@ namespace CSG
 		OpenMesh::FPropHandleT<int> MarkPropHandle;
 	};
 
+    struct Int
+    {
+        Int():value(-1){}
+        int value;
+
+        bool operator==(int other){return value == other;}
+        bool operator==(Int other){return value == other.value;}
+        void operator=(int other){value = other;}
+    };
+
+	struct MPMesh2:public MPMeshKernel
+	{
+		MPMesh2(const GS::BaseMesh* pMesh = nullptr);
+        ~MPMesh2(void);
+
+		int  ID;
+		bool bInverse;
+		AABBmp BBox;
+
+        const GS::BaseMesh* pOrigin;
+		Vec3d *verticesList;
+		OpenMesh::FPropHandleT<FeitoISectZone*> SurfacePropHandle; // 是否属于相交三角形
+		OpenMesh::VPropHandleT<Int> VertexIndexPropHandle; // 在结果网格中的index
+	};
 
 	MPMesh* ConvertToMPMesh(const GS::BaseMesh* pMesh);
+	MPMesh2* ConvertToMPMesh2(const GS::BaseMesh* pMesh);
 	MPMesh* ConvertToMPMeshChrome(const GS::BaseMesh* pMesh);
 	inline GS::double3 Vec3dToDouble3(const Vec3d& vec){return GS::double3(vec[0], vec[1], vec[2]);}
 	inline Vec3d Double3ToVec3d(const GS::double3& vec){return Vec3d(vec[0], vec[1], vec[2]);}

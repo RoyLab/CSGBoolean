@@ -460,7 +460,7 @@ int TriTriIntersectTest(const Vec3d& v0, const Vec3d& v1, const Vec3d& v2, const
 		}
 	}
 
-	return true;
+	return 1;
 }
 
 bool RayTriangleIntersectTest(const Vec3d& o, const Vec3d& d, const Vec3d& v0, const Vec3d& v1,  const Vec3d& v2,

@@ -21,7 +21,9 @@ namespace CSG
 	extern "C" CSG_API GS::BaseMesh* BooleanOperation_MultiThread(GS::CSGExprNode* input);
     extern "C" CSG_API MPMesh2* BooleanOperationFeito(MPMesh2* mesh1,  MPMesh2* mesh2, int op, HANDLE hd);
     extern "C" CSG_API MPMesh2* Convert2MPMesh2(const GS::BaseMesh* mesh);
-    extern "C" CSG_API GS::BaseMesh* Convert2BaseMesh2(const MPMesh2* mesh);
+    extern "C" CSG_API GS::BaseMesh* Convert2BaseMesh2(MPMesh2* mesh);
 	extern "C" CSG_API void SnapModel(const GS::BaseMesh* mesh);
+    extern "C" CSG_API void ReleaseMPMesh2(MPMesh2*& ptr);
+    
 }
 

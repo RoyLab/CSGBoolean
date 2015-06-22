@@ -11,7 +11,7 @@ namespace GS
 
 namespace CSG
 {
-    struct Octree;
+
     struct MPMesh;
 
     enum BiNodeType
