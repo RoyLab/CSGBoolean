@@ -298,14 +298,14 @@ BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& p
                 assert(0);
                 break;
             }
-            //ReleaseMPMesh2(A);
-            //ReleaseMPMesh2(B);
+            ReleaseMPMesh2(A);
+            ReleaseMPMesh2(B);
             temp.push(res);
         }
     }
     auto t = clock()-c0;
     wchar_t ch[32];
-    wsprintf(ch, L"time: %d\n", t);
+    wsprintf(ch, L"\n...total time...%d\n", t);
     WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), ch, wcslen(ch), 0, 0);
     BaseMesh* finalres = CSG::Convert2BaseMesh2(temp.top());
     ReleaseMPMesh2(temp.top());

@@ -692,17 +692,18 @@ MPMesh2* Classification(Octree<MPMesh2>* pOctree, MPMesh2** meshes, int op)
 		int accept, rule;
 		while (!queue2.empty())
 		{
-			if (pMesh->property(pMesh->MarkPropHandle, queue2.back()) == 2)
+			if (pMesh->property(pMesh->MarkPropHandle, queue2.front()) == 2)
 			{
 				queue2.pop();
 				continue;
 			}
+			//assert(pMesh->property(pMesh->TopologyInfo, queue2.front()) != 0);
 			queue1.push(queue2.front());
 			queue2.pop();
 			accept = -1; rule = -1;
 			while (!queue1.empty())
 			{
-				if (pMesh->property(pMesh->MarkPropHandle, queue1.back()) == 2)
+				if (pMesh->property(pMesh->MarkPropHandle, queue1.front()) == 2)
 				{
 					queue1.pop();
 					continue;
@@ -760,7 +761,7 @@ MPMesh2* Classification(Octree<MPMesh2>* pOctree, MPMesh2** meshes, int op)
 				}
 			} // queue1
 
-			//assert(accept != -1);
+			assert(accept != -1);
 			//static int count = 0;
 			//int count2 = count;
 			if (accept == 1)
