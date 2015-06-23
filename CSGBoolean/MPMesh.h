@@ -61,6 +61,8 @@ namespace CSG
 		MPMesh2(const GS::BaseMesh* pMesh = nullptr);
         ~MPMesh2(void);
 
+		MPMesh2::VertexHandle add_vertex(Vec3d& v);
+
 		int  ID;
 		bool bInverse;
 		AABBmp BBox;
@@ -68,7 +70,9 @@ namespace CSG
         const GS::BaseMesh* pOrigin;
 		Vec3d *verticesList;
 		OpenMesh::FPropHandleT<FeitoISectZone*> SurfacePropHandle; // 是否属于相交三角形
+		OpenMesh::FPropHandleT<int> TopologyInfo; // 是否属于相交三角形
 		OpenMesh::VPropHandleT<Int> VertexIndexPropHandle; // 在结果网格中的index
+		OpenMesh::FPropHandleT<int> MarkPropHandle;
 	};
 
 	MPMesh* ConvertToMPMesh(const GS::BaseMesh* pMesh);

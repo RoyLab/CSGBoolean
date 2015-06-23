@@ -88,6 +88,8 @@ namespace CSG
 	// left == in, right == out
 	BSP2D* BuildBSP2DNode(std::vector<BSPSeg>& segments)
 	{
+		if (!segments.size()) return nullptr;
+
 		std::vector<BSPSeg> leftSegs, rigtSegs;
 		SplitSegments(segments[0], segments.begin()+1, segments.end(), leftSegs, rigtSegs);
 		BSP2D* root = new BSP2D;

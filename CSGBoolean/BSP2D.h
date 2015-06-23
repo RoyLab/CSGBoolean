@@ -36,5 +36,7 @@ namespace CSG
 	Relation BSP2DInOutTest(const BSP2D*, GEOM_FADE2D::Point2*);
 	BSP2D* BuildBSP2D(ISectTriangle* tri, unsigned index, std::vector<TMP_VInfo>& infos);
 	bool SegIsectTest2D(ISCutSeg& seg1, ISCutSeg& seg2, std::vector<TMP_VInfo>& infos, Vec3d& output);
+	BSP2D* BuildBSP2DNode(std::vector<BSPSeg>& segments);
+
 }
 

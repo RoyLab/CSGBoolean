@@ -21,17 +21,28 @@ namespace CSG
 		verticesList(nullptr)
     {
 		request_face_normals();
-        	add_property(SurfacePropHandle);
+        add_property(MarkPropHandle);
+        add_property(SurfacePropHandle);
 		add_property(VertexIndexPropHandle);
+		add_property(TopologyInfo);
     }
 
     MPMesh2::~MPMesh2(void)
     {
 		release_face_normals();
-        	remove_property(SurfacePropHandle);
+        remove_property(MarkPropHandle);
+        remove_property(SurfacePropHandle);
 		remove_property(VertexIndexPropHandle);
+		remove_property(TopologyInfo);
 		SAFE_RELEASE_ARRAY(verticesList);
     }
+
+
+	MPMesh2::VertexHandle MPMesh2::add_vertex(Vec3d& v)
+	{
+		BBox.IncludePoint(v);
+		return MPMeshKernel::add_vertex(v);
+	}
 
 	MPMesh::MPMesh(const GS::BaseMesh* pMesh):
         ID(-1), pOrigin(pMesh), bInverse(false),

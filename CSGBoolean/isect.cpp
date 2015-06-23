@@ -159,7 +159,7 @@ static inline int compute_intervals_isectline(const Vec3d& v0, const Vec3d& v1, 
 			isectpoint1 = v1;
 			isectType0 = VER_0;
 			isectType1 = VER_1;
-			return EDGE_2;
+			return 0;
 		}
 		else if (sd[2] == 0)
 		{
@@ -172,7 +172,7 @@ static inline int compute_intervals_isectline(const Vec3d& v0, const Vec3d& v1, 
 			isectpoint1 = v2;
 			isectType0 = VER_0;
 			isectType1 = VER_2;
-			return EDGE_1;
+			return 0;
 		}
 		else if (sd[1]*sd[2] > 0)
 		{
@@ -182,7 +182,7 @@ static inline int compute_intervals_isectline(const Vec3d& v0, const Vec3d& v1, 
 			isectpoint1 = v0;
 			isectType0 = VER_0;
 			isectType1 = VER_0;
-			return VER_0;
+			return 0;
 			//return -1; // point intersection
 		}
 		else
@@ -205,7 +205,7 @@ static inline int compute_intervals_isectline(const Vec3d& v0, const Vec3d& v1, 
 			isectpoint1 = v2;
 			isectType0 = VER_1;
 			isectType1 = VER_2;
-			return EDGE_0;
+			return 0;
 		}
 		else if (sd[0]*sd[2] > 0)
 		{
@@ -215,7 +215,7 @@ static inline int compute_intervals_isectline(const Vec3d& v0, const Vec3d& v1, 
 			isectpoint1 = v1;
 			isectType0 = VER_1;
 			isectType1 = VER_1;
-			return VER_1;
+			return 0;
 			//return -1; // point intersection
 		}
 		else
@@ -238,7 +238,7 @@ static inline int compute_intervals_isectline(const Vec3d& v0, const Vec3d& v1, 
 			isectpoint1 = v2;
 			isectType0 = VER_2;
 			isectType1 = VER_2;
-			return VER_2;
+			return 0;
 			//return -1; // point intersection
 		}
 		else

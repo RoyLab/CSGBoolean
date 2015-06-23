@@ -1,6 +1,8 @@
 #include "precompile.h"
+#include "BSP2D.h"
 #include "Bool.h"
 #include "BaseMesh.h"
+#include <queue>
 
 #ifdef min
 #undef min
@@ -16,6 +18,7 @@
 #include "COctree.h"
 #include "IsectTriangle.h"
 #include "isect.h"
+#include <Fade_2D.h>
 
 namespace CSG
 {
@@ -36,67 +39,65 @@ public:
 
 	struct ISVertexInfo
 	{
-        ISVertexInfo(){reset();}
-        bool is_valid() {return pos > -1;}
-        void reset() {pos = -1;}
-		int	 pos; // -1 is invalid
-		ISVertexItr	next;
-	};
+        Vec3d coord;
+        MPMesh2::VertexHandle vhandle;
+		int Id_2d;
+    };
 
     struct SegData
     {
-        MPMesh2::FaceHandle face;
+        MPMesh2::FaceHandle thatFace;
         ISVertexItr points[2];
+
+		Line2D lineCoef;
     };
 
     struct VertexData
     {
         Vec3d coord;
-        bool used;
-        VertexData():used(false){}
-        VertexData(const Vec3d& v):used(false), coord(v){}
+        MPMesh::VertexHandle used;
+        VertexData(){used.reset();}
+        VertexData(const Vec3d& v):coord(v){used.reset();}
     };
 
-    FeitoISectZone(MPMesh2* mesh, MPMesh2::FaceHandle fh):
-    face(fh), thisMesh(mesh)
+    FeitoISectZone(MPMesh2* mesh, MPMesh2* mesh2, MPMesh2::FaceHandle fh):
+    face(fh), thisMesh(mesh), thatMesh(mesh2), xi(-1), yi(-1)
     {
 		// 三个角点在vertices的最后三个
-        int id[3];
 		auto fvItr = thisMesh->fv_begin(face);
-        id[0] = (fvItr++)->idx();
-        id[1] = (fvItr++)->idx();
-        id[2] = (fvItr)->idx();
+		ISVertexInfo info;
+		info.vhandle = *fvItr;
+		info.coord = thisMesh->point(info.vhandle);
+		vertices.push_back(info);
+		corner[0] = vertices.end();
+		corner[0] --;
 
-        ISVertexInfo info;
+		fvItr++;
+		info.vhandle = *fvItr;
+		info.coord = thisMesh->point(info.vhandle);
+		vertices.push_back(info);
+		corner[1] = vertices.end();
+		corner[1] --;
 
-        vertices.push_back(info);
-		corner[0] = --vertices.end();
-        vertices.push_back(info);
-		corner[1] = --vertices.end();
-        vertices.push_back(info);
-		corner[2] = --vertices.end();
+		fvItr++;
+		info.vhandle = *fvItr;
+		info.coord = thisMesh->point(info.vhandle);
+		vertices.push_back(info);
+		corner[2] = vertices.end();
+		corner[2] --;
 
-		// add to result mesh.  #WR#
-		MPMesh2::VertexHandle tmp;
-		for (int i = 0; i < 3; i++)
-		{
-            auto &prop = thisMesh->property(thisMesh->VertexIndexPropHandle, thisMesh->vertex_handle(id[i]));
-			if (prop == -1) 
-				prop = add_point(thisMesh->point(thisMesh->vertex_handle(id[i])));
-			corner[i]->pos = prop.value;
-		}
 		zone_record.push_back(this);
     }
 
     ~FeitoISectZone(){}
 
-    	void InsertSegment(ISVertexItr v0, ISVertexItr v1, FeitoISectZone* tri2)
+    void InsertSegment(ISVertexItr& v0, ISVertexItr& v1, FeitoISectZone* tri2)
 	{
-		SegData seg;
+		segs.emplace_back();
+        auto &seg = segs.back();
         seg.points[0] = v0;
         seg.points[1] = v1;
-		seg.face = tri2->face;
-		segs.push_back(seg);
+		seg.thatFace = tri2->face;
 	}
 
 	std::list<MPMesh2::FaceHandle> coplanarTris;
@@ -105,7 +106,9 @@ public:
     MPMesh2::FaceHandle face;
 
     ISVertexItr corner[3];
-    MPMesh2 *thisMesh;
+    MPMesh2 *thisMesh, *thatMesh;
+
+	int xi, yi;
 
 private:
     int Id;
@@ -120,7 +123,7 @@ public:
         clearList();
     }
 
-    static const VertexData& point(unsigned id){return verticesList[id];}
+    static VertexData& point(unsigned id){return verticesList[id];}
 
     static unsigned add_point(Vec3d& vec)
     {
@@ -152,16 +155,11 @@ void GetLeafNodes(OctreeNode*, std::list<OctreeNode*>&, int);
 
 inline bool CompareVertex(FeitoISectZone::ISVertexItr& ref, const Vec3d& vec)
 {
-	auto refcpy = ref;
-    while (!refcpy->is_valid()) refcpy = refcpy->next;
-	return IsEqual(FeitoISectZone::point(refcpy->pos).coord, vec);
+	return IsEqual(ref->coord, vec);
 }
 
 bool IsVertexExisted(FeitoISectZone* tri, Vec3d& vec, FeitoISectZone::ISVertexItr& ref)
 {
-	// we do not check if it is a corner point #WR#
-	// 但是，如果这个ref本身就在这个里面，那么问题就来了
-	// 因为所有的插入点都是在前面的，所以不用检查到最后一个：a, b, c, d, v0, v1, v2.
 	const auto end = tri->corner[0];
 	for (auto itr = tri->vertices.begin(); itr != end; itr++)
 	{
@@ -174,30 +172,17 @@ bool IsVertexExisted(FeitoISectZone* tri, Vec3d& vec, FeitoISectZone::ISVertexIt
 	return false;
 }
 
-FeitoISectZone::ISVertexItr InsertPoint(FeitoISectZone* tri, VertexPos pos, FeitoISectZone::ISVertexItr ref)
+// 明确一点：ref传进来之后将取代同位置的点
+void InsertPoint(FeitoISectZone* tri, VertexPos pos, FeitoISectZone::ISVertexInfo& ref)
 {
-	// 追溯到最源头的迭代器
-	while (!ref->is_valid()) ref = ref->next;
-
-    Vec3d vec = FeitoISectZone::point(ref->pos).coord;
-	FeitoISectZone::ISVertexItr output = ref;
-	FeitoISectZone::ISVertexInfo info;
-	info.next = ref;
+    Vec3d &vec = ref.coord;
+    FeitoISectZone::ISVertexItr coincident;
 	if (pos == INNER)
 	{
-		if (!IsVertexExisted(tri, vec, output))
-		{
-			tri->vertices.push_front(info);
-			output = tri->vertices.begin();
-		}
+		if (!IsVertexExisted(tri, vec, coincident))
+			tri->vertices.push_front(ref);
 		else
-		{
-			if (!output->is_valid() || output->pos != ref->pos)
-			{
-				output->reset();
-				output->next = ref;
-			}
-		}
+            coincident->vhandle = ref.vhandle;
 	}
 	else if (pos <= EDGE_2)
 	{
@@ -219,51 +204,53 @@ FeitoISectZone::ISVertexItr InsertPoint(FeitoISectZone* tri, VertexPos pos, Feit
 		}
 
 		FeitoISectZone*& other = mesh->property(mesh->SurfacePropHandle, *ffItr);
-		if (!other) other = new FeitoISectZone(mesh, *ffItr);
+		if (!other) other = new FeitoISectZone(mesh, tri->thatMesh, *ffItr);
 		InsertPoint(other, INNER, ref);
-		return InsertPoint(tri, INNER, ref);
+		InsertPoint(tri, INNER, ref);
 	}
 	else
 	{
 		// get the iterator of vertex #WR#
-		switch (pos)
-		{
-		case CSG::VER_0:
-			if (tri->corner[0]->pos == ref->pos) break;
-			tri->corner[0]->reset();
-			tri->corner[0]->next = ref;
-			output = tri->corner[0];
-			break;
-		case CSG::VER_1:
-			if (tri->corner[1]->pos == ref->pos) break;
-			tri->corner[1]->reset();
-			tri->corner[1]->next = ref;
-			output = tri->corner[1];
-			break;
-		case CSG::VER_2:
-			if (tri->corner[2]->pos == ref->pos) break;
-			tri->corner[2]->reset();
-			tri->corner[2]->next = ref;
-			output = tri->corner[2];
-			break;
-		}
+        assert(0);
+		    //switch (pos)
+		    //{
+		    //case CSG::VER_0:
+			   // if (tri->corner[0]->pos == ref->pos) break;
+			   // tri->corner[0]->reset();
+			   // tri->corner[0]->next = ref;
+			   // output = tri->corner[0];
+			   // break;
+		    //case CSG::VER_1:
+			   // if (tri->corner[1]->pos == ref->pos) break;
+			   // tri->corner[1]->reset();
+			   // tri->corner[1]->next = ref;
+			   // output = tri->corner[1];
+			   // break;
+		    //case CSG::VER_2:
+			   // if (tri->corner[2]->pos == ref->pos) break;
+			   // tri->corner[2]->reset();
+			   // tri->corner[2]->next = ref;
+			   // output = tri->corner[2];
+			   // break;
+		    //}
 	}
-		
-	return output;
 }
 
 FeitoISectZone::ISVertexItr InsertPoint(FeitoISectZone* tri, VertexPos pos, Vec3d& vec)
 {
 	FeitoISectZone::ISVertexItr output;
+    FeitoISectZone::ISVertexInfo info;
+    info.coord = vec;
 	if (pos == INNER)
 	{
 		if (!IsVertexExisted(tri, vec, output))
 		{
-			FeitoISectZone::ISVertexInfo info;
-            info.pos = FeitoISectZone::add_point(vec);
+            auto vhandle = tri->thisMesh->add_vertex(vec);
+            info.vhandle = vhandle;
 			tri->vertices.push_front(info);
-			output = tri->vertices.begin();
+            return tri->vertices.begin();
 		}
+        else return output;
 	}
 	else if (pos <= EDGE_2)
 	{
@@ -296,9 +283,10 @@ FeitoISectZone::ISVertexItr InsertPoint(FeitoISectZone* tri, VertexPos pos, Vec3
 		assert(*fvItr != f0); fvItr++;
 		assert(*fvItr != f0);
 #endif
-		if (!other) other = new FeitoISectZone(mesh, *ffItr);
-		output = InsertPoint(other, INNER, vec);
-		return InsertPoint(tri, INNER, output);
+		if (!other) other = new FeitoISectZone(mesh, tri->thatMesh, *ffItr);
+		output = InsertPoint(tri, INNER, vec);
+		InsertPoint(other, INNER, *output);
+        return output;
 	}
 	else
 	{
@@ -351,7 +339,7 @@ void ISectTest2(Octree<MPMesh2>* pOctree, bool bInverse)
 			for (j = 0; j < nj; j++)
 			{
 				tri1 = tt1[i];
-				tri2 = tt1[j];
+				tri2 = tt2[j];
                 triId[0] = tri1.idx();
                 triId[1] = tri2.idx();
 				GS::MakeIndex(triId, iPair);
@@ -375,8 +363,8 @@ void ISectTest2(Octree<MPMesh2>* pOctree, bool bInverse)
 				FeitoISectZone **si = &mesh1->property(mesh1->SurfacePropHandle, tri1);
 				FeitoISectZone **sj = &mesh2->property(mesh2->SurfacePropHandle, tri2);
 
-				if (!*si) *si = new FeitoISectZone(mesh1, tri1);
-				if (!*sj) *sj = new FeitoISectZone(mesh2, tri2);
+				if (!*si) *si = new FeitoISectZone(mesh1, mesh2, tri1);
+				if (!*sj) *sj = new FeitoISectZone(mesh2, mesh1, tri2);
 
 				if (isISect == 0)
 				{
@@ -397,33 +385,62 @@ void ISectTest2(Octree<MPMesh2>* pOctree, bool bInverse)
 					Vec3d point = (start+end)/2;
 
 					// 最后一个参数表示，可能存在两个以上的插入点
-					vP1 = InsertPoint(*si, startiT, point);
-					InsertPoint(*si, endiT, vP1);
-					InsertPoint(*sj, startjT, vP1);
-					InsertPoint(*sj, endjT, vP1);
+                    
+                    auto info1 = InsertPoint(*si, VertexPos(startiT | endiT), point);
+					auto info2 = InsertPoint(*sj, VertexPos(startjT | endjT), point);
+
+                    auto &id1 = mesh1->property(mesh1->VertexIndexPropHandle, info1->vhandle);
+                    auto &id2 = mesh2->property(mesh2->VertexIndexPropHandle, info2->vhandle);
+
+					if (id1 == -1)
+                    {
+						assert(id2 == -1);
+						int id = FeitoISectZone::add_point(point);
+						id1 = id;
+						id2 = id;
+					}
 				}
 				else
 				{
 					// 线相交
 					double d = OpenMesh::dot(OpenMesh::cross(nv, nu), end-start);
-					if (bInverse) d = -d;
+					//if (bInverse) d = -d;
+					
+					auto info1 = InsertPoint(*si, startiT, start);
+					auto info2 = InsertPoint(*si, endiT, end);
+
+                    auto infox1 = InsertPoint(*sj, startjT, start);
+					auto infox2 = InsertPoint(*sj, endjT, end);
+
+                    auto &id1 = mesh1->property(mesh1->VertexIndexPropHandle, info1->vhandle);
+                    auto &id2 = mesh2->property(mesh2->VertexIndexPropHandle, infox1->vhandle);
+					if (id1 == -1)
+					{
+						assert(id2 == -1);
+						int id = FeitoISectZone::add_point(start);
+						id1 = id;
+						id2 = id;
+					}
+
+                    auto &idx1 = mesh1->property(mesh1->VertexIndexPropHandle, info2->vhandle);
+                    auto &idx2 = mesh2->property(mesh2->VertexIndexPropHandle, infox2->vhandle);
+					if (idx1 == -1)
+					{
+						assert(idx2 == -1);
+						int id = FeitoISectZone::add_point(end);
+						idx1 = id;
+						idx2 = id;
+					}
+					
 					if (d > 0)
 					{
-						vP1 = InsertPoint(*si, startiT, start);
-						vP2 = InsertPoint(*si, endiT, end);
-						(*si)->InsertSegment(vP1, vP2, *sj);
-						vP1 = InsertPoint(*sj, startjT, vP1);
-						vP2 = InsertPoint(*sj, endjT, vP2);
-						(*sj)->InsertSegment(vP2, vP1, *si);
+						(*si)->InsertSegment(info1, info2, *sj);
+						(*sj)->InsertSegment(infox2, infox1, *si);
 					}
 					else
 					{
-						vP1 = InsertPoint(*si, startiT, start);
-						vP2 = InsertPoint(*si, endiT, end);
-						(*si)->InsertSegment(vP2, vP1, *sj);
-						vP1 = InsertPoint(*sj, startjT, vP1);
-						vP2 = InsertPoint(*sj, endjT, vP2);
-						(*sj)->InsertSegment(vP1, vP2, *si);
+						(*si)->InsertSegment(info2, info1, *sj);
+						(*sj)->InsertSegment(infox1, infox2, *si);
 					}
 				}
 			}
@@ -431,12 +448,374 @@ void ISectTest2(Octree<MPMesh2>* pOctree, bool bInverse)
 	}
 }
 
+inline int FindMaxIndex(Vec3d& vec)
+{
+	double a = fabs(vec[0]);
+	double b = fabs(vec[1]);
+	double c = fabs(vec[2]);
+
+	if (a >= b)
+	{
+		if (a >= c) return 0;
+		else return 2;
+	}
+	else
+	{
+		if (b >= c) return 1;
+		else return 2;
+	}
+}
+
+struct Data2D
+{
+	GEOM_FADE2D::Point2 p2;
+	FeitoISectZone::ISVertexItr itr;
+};
+
+void FeitoParsingFace1(FeitoISectZone* triangle, Octree<MPMesh2>* pOctree, std::vector<Data2D>& points)
+	{
+	// 树不为空，存在一个on的节点
+	assert(triangle);
+	MPMesh2 *pMesh = triangle->thisMesh;
+
+	Vec3d normal = pMesh->normal(triangle->face);
+	int mainAxis = FindMaxIndex(normal);
+	if (normal[mainAxis] > 0.0)
+	{
+		triangle->xi = (mainAxis+1)%3;
+		triangle->yi = (mainAxis+2)%3;
+	}
+	else
+	{
+		triangle->yi = (mainAxis+1)%3;
+		triangle->xi = (mainAxis+2)%3;
+	}
+
+	unsigned n_vertices = triangle->vertices.size();
+
+	// 3D 转 2D 坐标
+	points.reserve(n_vertices+5);
+	points.resize(n_vertices);
+	size_t count = 0; 
+	for (auto vertex = triangle->vertices.begin();
+		vertex != triangle->vertices.end(); vertex++, count++)
+	{
+		vertex->Id_2d = count;
+		points[count].p2.set(vertex->coord[triangle->xi], vertex->coord[triangle->yi]);
+		points[count].p2.setCustomIndex(count);
+		points[count].itr = vertex;
+	}
+}
+
+inline void CalcLineCoef(FeitoISectZone::SegData& seg, std::vector<Data2D>& infos)
+{
+	auto &p0 = infos[seg.points[0]->Id_2d].p2;
+	auto &p1 = infos[seg.points[1]->Id_2d].p2;
+		
+	assert(!IsEqual(seg.points[0]->coord, seg.points[1]->coord));
+
+	auto dir = p1-p0;
+    OpenMesh::Vec2d n(-dir.y(), dir.x());
+    n.normalize();
+	double d = n[1]*p0.y()+n[0]*p0.x();
+	seg.lineCoef[0] = n[0];
+	seg.lineCoef[1] = n[1];
+	seg.lineCoef[2] = -d;
+}
+
+inline double cross(const OpenMesh::Vec2d& v0, const OpenMesh::Vec2d& v1)
+{
+	return v0[0]*v1[1]-v0[1]*v1[0];
+}
+
+inline bool IsPointInTriangle(const OpenMesh::Vec2d &bc, OpenMesh::Vec2d* v, Relation& rel)
+{
+	double d = cross(v[1]-v[0], bc-v[0]);
+	if (cross(v[2]-v[1], bc-v[1])*d < 0) return false;
+	if (cross(v[0]-v[2], bc-v[2])*d < 0) return false;
+	return true;
+}
+
+bool IsInsideTriangle(FeitoISectZone* triangle, MPMesh2::FaceHandle coTri, const Point2 &bc, Relation &rel)
+{
+	Vec3d *v0, *v1, *v2;
+	auto pMesh = triangle->thatMesh;
+	GetCorners(pMesh, coTri, v0, v1, v2);
+		
+	OpenMesh::Vec2d v[3];
+	v[0][0] = (*v0)[triangle->xi]; v[0][1] = (*v0)[triangle->yi];
+	v[1][0] = (*v1)[triangle->xi]; v[1][1] = (*v1)[triangle->yi];
+	v[2][0] = (*v2)[triangle->xi]; v[2][1] = (*v2)[triangle->yi];
+
+	if (IsPointInTriangle(OpenMesh::Vec2d(bc.x(), bc.y()), v, rel))
+	{
+		double d = OpenMesh::dot(triangle->thisMesh->normal(triangle->face), pMesh->normal(coTri));
+		if (d > 0.0) rel = REL_SAME;
+		else rel = REL_OPPOSITE;
+		return true;
+	}
+	else return false;
+}
+
+void FeitoParsingFace2(FeitoISectZone* triangle, Octree<MPMesh2>* pOctree, std::vector<Data2D>& points)
+{
+	BSPSeg tmpSeg;
+	std::vector<BSPSeg> segments;
+	auto &segs = triangle->segs;
+	for (auto &seg: segs)
+	{
+		CalcLineCoef(seg, points);
+		tmpSeg.lineCoef = seg.lineCoef;
+		tmpSeg.start = points[seg.points[0]->Id_2d].p2;
+		tmpSeg.end = points[seg.points[1]->Id_2d].p2;
+		segments.push_back(tmpSeg);
+	}
+	BSP2D* bsp =  BuildBSP2DNode(segments);
+
+	std::vector<GEOM_FADE2D::Segment2> segList;
+	Point2 *p0, *p1;
+	for (auto seg = segs.begin(); seg != segs.end(); seg++)
+	{
+		p0 = &points[seg->points[0]->Id_2d].p2;
+		p1 = &points[seg->points[1]->Id_2d].p2;
+		segList.emplace_back(*p0, *p1);
+	}
+	
+	GEOM_FADE2D::Fade_2D *dt;
+    dt = new GEOM_FADE2D::Fade_2D;
+	for (int i = 0; i < points.size(); i++)
+		dt->insert(points[i].p2);
+	//dt->insert(points[triangle->corner[0]->Id_2d].p2);
+	//dt->insert(points[triangle->corner[1]->Id_2d].p2);
+	//dt->insert(points[triangle->corner[2]->Id_2d].p2);
+
+	dt->createConstraint(segList, GEOM_FADE2D::CIS_IGNORE_DELAUNAY);
+	dt->applyConstraintsAndZones();
+
+	std::vector<GEOM_FADE2D::Triangle2*> vAllTriangles;
+	dt->getTrianglePointers(vAllTriangles);
+
+	triangle->thisMesh->delete_face(triangle->face, false);
+
+	auto pMesh = triangle->thisMesh;
+	GEOM_FADE2D::Point2 baryCenter2d;
+	for (auto triFrag: vAllTriangles)
+	{
+		baryCenter2d = triFrag->getBarycenter();
+		GS::double3 v[3];
+		v[0] = Vec3dToDouble3(points[triFrag->getCorner(0)->getCustomIndex()].itr->coord);
+		v[1] = Vec3dToDouble3(points[triFrag->getCorner(1)->getCustomIndex()].itr->coord);
+		v[2] = Vec3dToDouble3(points[triFrag->getCorner(2)->getCustomIndex()].itr->coord);
+
+		GS::double3x3 mat(GS::double3(1,1,1), v[2]-v[1], v[2]-v[0]);
+		if (fabs(GS::determinant(mat)) < 1e-9) continue;
+
+		auto fhandle = pMesh->add_face(
+			points[triFrag->getCorner(0)->getCustomIndex()].itr->vhandle,
+			points[triFrag->getCorner(1)->getCustomIndex()].itr->vhandle,
+			points[triFrag->getCorner(2)->getCustomIndex()].itr->vhandle);
+
+		assert(fhandle.is_valid());
+
+		Relation rel = REL_UNKNOWN;
+		int id = fhandle.idx();
+        auto &cop = triangle->coplanarTris;
+		if (cop.size())
+        {
+			for (auto &coTri: cop)
+			{
+				if (IsInsideTriangle(triangle, coTri, baryCenter2d, rel))
+					break;
+			}
+        }
+		else
+		{
+			if (bsp)
+				rel = BSP2DInOutTest(bsp, &baryCenter2d);
+		}
+		switch (rel)
+		{
+		case CSG::REL_INSIDE:
+			pMesh->property(pMesh->TopologyInfo, fhandle) = REL_INSIDE;
+			break;
+		case CSG::REL_OUTSIDE:
+			pMesh->property(pMesh->TopologyInfo, fhandle) = REL_OUTSIDE;
+			break;
+		case CSG::REL_OPPOSITE:
+			pMesh->property(pMesh->TopologyInfo, fhandle) = REL_OPPOSITE;
+			break;
+		case CSG::REL_SAME:
+			pMesh->property(pMesh->TopologyInfo, fhandle) = REL_SAME;
+			break;
+		default:
+			break;
+		}
+	}
+
+	SAFE_RELEASE(dt);
+	SAFE_RELEASE(bsp);
+}
+
+
+void Tesselation(Octree<MPMesh2>* pOctree)
+{
+	std::vector<Data2D> points;
+	for (auto &triangle: FeitoISectZone::zone_record)
+	{
+		points.clear();
+		FeitoParsingFace1(triangle, pOctree, points);
+		FeitoParsingFace2(triangle, pOctree, points);
+	}
+}
+
+static int booleanRelation[3][2] = {
+	{REL_OUTSIDE | REL_SAME, REL_OUTSIDE},
+	{REL_INSIDE | REL_SAME, REL_INSIDE},
+	{REL_OUTSIDE | REL_OPPOSITE, REL_INSIDE}
+}; 
+
+MPMesh2* Classification(Octree<MPMesh2>* pOctree, MPMesh2** meshes, int op)
+{
+	MPMesh2* res = new MPMesh2;
+	std::queue<MPMesh2::FaceHandle> queue1, queue2;
+	std::list<MPMesh2::FaceHandle> faceBuffer;
+	for (int main = 0; main < 2; main++)
+	{
+		auto *pMesh = meshes[main];
+		pMesh->garbage_collection();
+		MPMesh2::VertexHandle *record = new MPMesh2::VertexHandle[pMesh->n_vertices()];
+		for (int i = 0; i < pMesh->n_vertices(); i++) record[i].reset();
+
+		queue2.push(*pMesh->faces_sbegin());
+
+		int targetRelation = booleanRelation[op][main];
+		int accept, rule;
+		while (!queue2.empty())
+		{
+			if (pMesh->property(pMesh->MarkPropHandle, queue2.back()) == 2)
+			{
+				queue2.pop();
+				continue;
+			}
+			queue1.push(queue2.front());
+			queue2.pop();
+			accept = -1; rule = -1;
+			while (!queue1.empty())
+			{
+				if (pMesh->property(pMesh->MarkPropHandle, queue1.back()) == 2)
+				{
+					queue1.pop();
+					continue;
+				}
+				auto curFace = queue1.front();
+				queue1.pop();
+				pMesh->property(pMesh->MarkPropHandle, curFace) = 2;
+
+				faceBuffer.push_back(curFace);
+
+				if (accept == -1)
+				{
+					int a = pMesh->property(pMesh->TopologyInfo, curFace);
+					if (a)
+					{
+						if (a & targetRelation) accept = 1;
+						else accept = 0;
+						rule = a;
+					}
+				}
+
+				MPMesh2::FaceFaceIter ffItr = pMesh->ff_iter(curFace);
+				int *markPtr;
+				for (int i = 0; i < 3; i++, ffItr++)
+				{
+                    if (!ffItr.is_valid())
+						break;
+
+					markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
+					if (*markPtr != 2)
+					{
+						int b = pMesh->property(pMesh->TopologyInfo, *ffItr);
+						if (rule > -1 && b)
+						{
+							if (rule == b && *markPtr != 1)
+							{
+								*markPtr = 1; // queued
+								queue1.push(*ffItr);
+							}
+							else if (rule != b && *markPtr != 4) // seed
+							{
+								*markPtr = 4; // seed
+								queue2.push(*ffItr);
+							}
+						}
+						else
+						{
+							if (*markPtr != 1)
+							{
+								*markPtr = 1; // queued
+								queue1.push(*ffItr);
+							}
+						}
+					}
+				}
+			} // queue1
+
+			//assert(accept != -1);
+			//static int count = 0;
+			//int count2 = count;
+			if (accept == 1)
+			{
+				for (auto itr:faceBuffer)
+				{
+					//if (!(count2--)) break;;
+					//debug
+					//auto dn = pMesh->n_faces();
+					auto fvItr = pMesh->fv_begin(itr);
+
+					MPMesh2::VertexHandle *vhandle3[3];
+					for (int i = 0; i < 3; i++,fvItr++)
+					{
+						// 检查是否已被添加
+						int global_id = pMesh->property(pMesh->VertexIndexPropHandle, *fvItr).value;
+						if (global_id != -1)
+						{
+							vhandle3[i] = &(FeitoISectZone::point(global_id).used);
+							if (!vhandle3[i]->is_valid())
+								*vhandle3[i] = res->add_vertex(pMesh->point(*fvItr));
+							
+							record[fvItr->idx()] = *(vhandle3[i]);
+						}
+						else
+						{
+							vhandle3[i] = &record[fvItr->idx()];
+							if (!record[fvItr->idx()].is_valid())
+								*vhandle3[i] = res->add_vertex(pMesh->point(*fvItr));
+						}
+					}
+
+					MPMesh2::FaceHandle fhandle;
+					if (main*op == 2)
+						fhandle = res->add_face(*vhandle3[2], *vhandle3[1], *vhandle3[0]);
+					else 
+						fhandle = res->add_face(*vhandle3[0], *vhandle3[1], *vhandle3[2]);
+					assert(fhandle.is_valid());
+				}
+			}
+			faceBuffer.clear();
+			//count++;
+			//break;
+
+		} // queue2
+
+		delete [] record;
+	}
+	return res;
+}
+
 
 // 0 Union:
 // 1 Intersect
 // 2 Diff 
-
-
 
 extern "C" CSG_API MPMesh2* BooleanOperationFeito(MPMesh2* mesh1, MPMesh2* mesh2, int op, HANDLE hd)
 {
@@ -447,11 +826,21 @@ extern "C" CSG_API MPMesh2* BooleanOperationFeito(MPMesh2* mesh1, MPMesh2* mesh2
     MPMesh2 *arrMesh[2] = {mesh1, mesh2};
     Octree<MPMesh2>* pOctree = BuildOctree2(arrMesh, 2);
     ISectTest2(pOctree, (op==2)?true:false);
-    //Tesselation();
-    //Classification();
+    Tesselation(pOctree);
+    res = Classification(pOctree, arrMesh, op);
 
     FeitoISectZone::clear();
     delete pOctree;
+
+	//res = arrMesh[0];
+	//res->garbage_collection();
+	size_t n = res->n_vertices();
+	res->verticesList = new Vec3d[n];
+
+	for (auto vItr = res->vertices_begin();
+		vItr != res->vertices_end(); vItr ++)
+		res->verticesList[vItr->idx()] = res->point(*vItr);
+
     return res;
 }
 
@@ -503,15 +892,14 @@ extern "C" CSG_API GS::BaseMesh* Convert2BaseMesh2(MPMesh2* mesh)
     {
 		GS::double3 v[3];
 		Vec3d *v0, *v1, *v2;
-        MPMesh2::FaceHandle face2 = face;
-		GetCorners(mesh, face2, v0, v1, v2);
+		GetCorners(mesh, static_cast<MPMesh::FaceHandle>(*face), v0, v1, v2);
 		v[0] = Vec3dToDouble3(*v0);
 		v[1] = Vec3dToDouble3(*v1);
 		v[2] = Vec3dToDouble3(*v2);
 		res->AddTriangle(v);
     }
 
-    return NULL;
+    return res;
 }
 
 

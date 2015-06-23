@@ -298,8 +298,8 @@ BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& p
                 assert(0);
                 break;
             }
-            ReleaseMPMesh2(A);
-            ReleaseMPMesh2(B);
+            //ReleaseMPMesh2(A);
+            //ReleaseMPMesh2(B);
             temp.push(res);
         }
     }

@@ -16,7 +16,7 @@
 #include <OpenMesh/Tools/Utils/getopt.h>
 
 #ifdef _DEBUG
-#include <vld.h>
+//#include <vld.h>
 int countd1, countd2, countd3, countd4, countd5;
 #endif
 
