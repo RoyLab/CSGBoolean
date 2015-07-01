@@ -264,6 +264,7 @@ BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& p
     std::stack<CSG::MPMesh2*> temp;
 
     auto c0 = clock();
+	int k = 0;
     for (unsigned i = 0; i < postfix.size(); i ++)
     {
         if (postfix[i] == ' ') continue;
@@ -279,6 +280,9 @@ BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& p
         }
         else 
         {
+			wchar_t s[32];
+			wsprintf(s, L"%d...", k++);
+			WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s, wcslen(s), 0, 0);
             CSG::MPMesh2 *B = temp.top();
             temp.pop();
             CSG::MPMesh2 *A = temp.top(), *res;
@@ -316,9 +320,10 @@ BaseMesh*  LBSPBoolOp::Evalute2(std::vector<BaseMesh*>& meshList, std::string& p
 BaseMesh*  LBSPBoolOp::Evalute1(std::vector<BaseMesh*>& meshList, std::string& postfix) 
 {
     std::stack<BaseMesh*> temp;
-    std::vector<BaseMesh*> garbage;
+    std::list<BaseMesh*> garbage;
 
     auto c0 = clock();
+	int k = 0;
     for (unsigned i = 0; i < postfix.size(); i ++)
     {
         if (postfix[i] == ' ') continue;
@@ -334,6 +339,10 @@ BaseMesh*  LBSPBoolOp::Evalute1(std::vector<BaseMesh*>& meshList, std::string& p
         }
         else 
         {
+			wchar_t s[32];
+			wsprintf(s, L"%d...", k++);
+			WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), s, wcslen(s), 0, 0);
+
             BaseMesh *B = temp.top();
             temp.pop();
             BaseMesh *A = temp.top(), *res;
@@ -353,13 +362,28 @@ BaseMesh*  LBSPBoolOp::Evalute1(std::vector<BaseMesh*>& meshList, std::string& p
                 assert(0);
                 break;
             }
+
+			auto itrA = std::find(garbage.begin(), garbage.end(), A);
+			if (itrA != garbage.end())
+			{
+				delete *itrA;
+				garbage.erase(itrA);
+			}
+
+			auto itrB = std::find(garbage.begin(), garbage.end(), B);
+			if (itrB != garbage.end())
+			{
+				delete *itrB;
+				garbage.erase(itrB);
+			}
+
             temp.push(res);
             garbage.push_back(res);
         }
     }
     auto t = clock()-c0;
     wchar_t ch[32];
-    wsprintf(ch, L"time: %d\n", t);
+    wsprintf(ch, L"\n...total time...%d\n", t);
     WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), ch, wcslen(ch), 0, 0);
     BaseMesh* finalres = garbage.back();
     garbage.pop_back();

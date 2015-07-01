@@ -8,15 +8,17 @@
 
 std::vector<std::string> expression;
 
-void GetLoop(std::string& s)
+bool GetLoop(std::string& s)
 {
     bool flag = false;
     char c[20];
     int end;
     std::ifstream script("D:\\bool\\boolnum.txt");
-	if (!script) return;
+	if (!script) return false;
     script >> end;
     script.close();
+	if (end == 0) return false;
+
 	end /= 20;
 	s = "0";
     for (int i = 1 ; i < end+1; i++)
@@ -30,6 +32,7 @@ void GetLoop(std::string& s)
 		}
 		flag = !flag;
 	}
+	return true;
 }
 
 CGraphics::CGraphics()
@@ -47,6 +50,8 @@ CGraphics::CGraphics()
             expression.emplace_back(eval);
     }
     script.close();
+	expression.emplace_back();
+    if (!GetLoop(expression.back())) expression.pop_back();
 }
 
 CGraphics::~CGraphics()
@@ -337,9 +342,6 @@ void CGraphics::Intersect()
      bool flag = false;
      static unsigned count = 0;
      mModelMgr.EvaluateBoolExpression(expression[count]);
-     //std::string expr;
-     //GetLoop(expr);
-     //mModelMgr.EvaluateBoolExpression(expr);
      count = (count+1)%expression.size();
  }
 

@@ -203,9 +203,12 @@ void InsertPoint(FeitoISectZone* tri, VertexPos pos, FeitoISectZone::ISVertexInf
 			assert(0);
 		}
 
-		FeitoISectZone*& other = mesh->property(mesh->SurfacePropHandle, *ffItr);
-		if (!other) other = new FeitoISectZone(mesh, tri->thatMesh, *ffItr);
-		InsertPoint(other, INNER, ref);
+		if (ffItr->is_valid())
+		{
+			FeitoISectZone*& other = mesh->property(mesh->SurfacePropHandle, *ffItr);
+			if (!other) other = new FeitoISectZone(mesh, tri->thatMesh, *ffItr);
+			InsertPoint(other, INNER, ref);
+		}
 		InsertPoint(tri, INNER, ref);
 	}
 	else
@@ -271,21 +274,24 @@ FeitoISectZone::ISVertexItr InsertPoint(FeitoISectZone* tri, VertexPos pos, Vec3
 			assert(0);
 		}
 
-		FeitoISectZone*& other = mesh->property(mesh->SurfacePropHandle, *ffItr);
-#ifdef _DEBUG_
-		auto fvItr = mesh->fv_begin(tri->face);
-		if (pos == EDGE_1) fvItr++;
-		if (pos == EDGE_2) {fvItr++; fvItr++;}
-			
-		auto f0 = *fvItr;
-		fvItr = mesh->fv_begin(*ffItr);
-		assert(*fvItr != f0); fvItr++;
-		assert(*fvItr != f0); fvItr++;
-		assert(*fvItr != f0);
-#endif
-		if (!other) other = new FeitoISectZone(mesh, tri->thatMesh, *ffItr);
 		output = InsertPoint(tri, INNER, vec);
-		InsertPoint(other, INNER, *output);
+		if (ffItr->is_valid())
+		{
+			FeitoISectZone*& other = mesh->property(mesh->SurfacePropHandle, *ffItr);
+#ifdef _DEBUG_
+			auto fvItr = mesh->fv_begin(tri->face);
+			if (pos == EDGE_1) fvItr++;
+			if (pos == EDGE_2) {fvItr++; fvItr++;}
+			
+			auto f0 = *fvItr;
+			fvItr = mesh->fv_begin(*ffItr);
+			assert(*fvItr != f0); fvItr++;
+			assert(*fvItr != f0); fvItr++;
+			assert(*fvItr != f0);
+#endif
+			if (!other) other = new FeitoISectZone(mesh, tri->thatMesh, *ffItr);
+			InsertPoint(other, INNER, *output);
+		}
         return output;
 	}
 	else
@@ -386,8 +392,18 @@ void ISectTest2(Octree<MPMesh2>* pOctree, bool bInverse)
 
 					// 最后一个参数表示，可能存在两个以上的插入点
                     
-                    auto info1 = InsertPoint(*si, VertexPos(startiT | endiT), point);
-					auto info2 = InsertPoint(*sj, VertexPos(startjT | endjT), point);
+                    auto info1 = InsertPoint(*si, VertexPos(startiT), point);
+					InsertPoint(*si, VertexPos(endiT), *info1);
+					auto info2 = InsertPoint(*sj, VertexPos(startjT), point);
+					InsertPoint(*sj, VertexPos(endjT), *info2);
+
+     //               auto info1 = InsertPoint(*si, VertexPos(startiT | endiT), point);
+					//auto info2 = InsertPoint(*sj, VertexPos(startjT | endjT), point);
+					//if(!info1->vhandle.is_valid() || !info2->vhandle.is_valid())
+					//{
+					//	(*sj)->coplanarTris.emplace_back(tri1);
+					//	return;
+					//}
 
                     auto &id1 = mesh1->property(mesh1->VertexIndexPropHandle, info1->vhandle);
                     auto &id2 = mesh2->property(mesh2->VertexIndexPropHandle, info2->vhandle);
@@ -615,7 +631,8 @@ void FeitoParsingFace2(FeitoISectZone* triangle, Octree<MPMesh2>* pOctree, std::
 			points[triFrag->getCorner(1)->getCustomIndex()].itr->vhandle,
 			points[triFrag->getCorner(2)->getCustomIndex()].itr->vhandle);
 
-		assert(fhandle.is_valid());
+		//assert(fhandle.is_valid());
+		if (!fhandle.is_valid()) continue;
 
 		Relation rel = REL_UNKNOWN;
 		int id = fhandle.idx();
@@ -686,128 +703,131 @@ MPMesh2* Classification(Octree<MPMesh2>* pOctree, MPMesh2** meshes, int op)
 		MPMesh2::VertexHandle *record = new MPMesh2::VertexHandle[pMesh->n_vertices()];
 		for (int i = 0; i < pMesh->n_vertices(); i++) record[i].reset();
 
-		queue2.push(*pMesh->faces_sbegin());
-
-		int targetRelation = booleanRelation[op][main];
-		int accept, rule;
-		while (!queue2.empty())
+		for (auto face_itr = pMesh->faces_sbegin(); 
+			face_itr != pMesh->faces_end(); face_itr++)
 		{
-			if (pMesh->property(pMesh->MarkPropHandle, queue2.front()) == 2)
+			if (pMesh->property(pMesh->MarkPropHandle, *face_itr) == 2) continue;
+			queue2.push(*face_itr);
+
+			int targetRelation = booleanRelation[op][main];
+			int accept, rule;
+			while (!queue2.empty())
 			{
-				queue2.pop();
-				continue;
-			}
-			//assert(pMesh->property(pMesh->TopologyInfo, queue2.front()) != 0);
-			queue1.push(queue2.front());
-			queue2.pop();
-			accept = -1; rule = -1;
-			while (!queue1.empty())
-			{
-				if (pMesh->property(pMesh->MarkPropHandle, queue1.front()) == 2)
+				if (pMesh->property(pMesh->MarkPropHandle, queue2.front()) == 2)
 				{
-					queue1.pop();
+					queue2.pop();
 					continue;
 				}
-				auto curFace = queue1.front();
-				queue1.pop();
-				pMesh->property(pMesh->MarkPropHandle, curFace) = 2;
-
-				faceBuffer.push_back(curFace);
-
-				if (accept == -1)
+				//assert(pMesh->property(pMesh->TopologyInfo, queue2.front()) != 0);
+				queue1.push(queue2.front());
+				queue2.pop();
+				accept = -1; rule = -1;
+				while (!queue1.empty())
 				{
-					int a = pMesh->property(pMesh->TopologyInfo, curFace);
-					if (a)
+					if (pMesh->property(pMesh->MarkPropHandle, queue1.front()) == 2)
 					{
-						if (a & targetRelation) accept = 1;
-						else accept = 0;
-						rule = a;
+						queue1.pop();
+						continue;
 					}
-				}
+					auto curFace = queue1.front();
+					queue1.pop();
+					pMesh->property(pMesh->MarkPropHandle, curFace) = 2;
 
-				MPMesh2::FaceFaceIter ffItr = pMesh->ff_iter(curFace);
-				int *markPtr;
-				for (int i = 0; i < 3; i++, ffItr++)
-				{
-                    if (!ffItr.is_valid())
-						break;
+					faceBuffer.push_back(curFace);
 
-					markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
-					if (*markPtr != 2)
+					if (accept == -1)
 					{
-						int b = pMesh->property(pMesh->TopologyInfo, *ffItr);
-						if (rule > -1 && b)
+						int a = pMesh->property(pMesh->TopologyInfo, curFace);
+						if (a)
 						{
-							if (rule == b && *markPtr != 1)
-							{
-								*markPtr = 1; // queued
-								queue1.push(*ffItr);
-							}
-							else if (rule != b && *markPtr != 4) // seed
-							{
-								*markPtr = 4; // seed
-								queue2.push(*ffItr);
-							}
-						}
-						else
-						{
-							if (*markPtr != 1)
-							{
-								*markPtr = 1; // queued
-								queue1.push(*ffItr);
-							}
+							if (a & targetRelation) accept = 1;
+							else accept = 0;
+							rule = a;
 						}
 					}
-				}
-			} // queue1
 
-			assert(accept != -1);
-			//static int count = 0;
-			//int count2 = count;
-			if (accept == 1)
-			{
-				for (auto itr:faceBuffer)
-				{
-					//if (!(count2--)) break;;
-					//debug
-					//auto dn = pMesh->n_faces();
-					auto fvItr = pMesh->fv_begin(itr);
-
-					MPMesh2::VertexHandle *vhandle3[3];
-					for (int i = 0; i < 3; i++,fvItr++)
+					MPMesh2::FaceFaceIter ffItr = pMesh->ff_iter(curFace);
+					int *markPtr;
+					for (int i = 0; i < 3; i++, ffItr++)
 					{
-						// 检查是否已被添加
-						int global_id = pMesh->property(pMesh->VertexIndexPropHandle, *fvItr).value;
-						if (global_id != -1)
+						if (!ffItr.is_valid())
+							break;
+
+						markPtr = &(pMesh->property(pMesh->MarkPropHandle, *ffItr));
+						if (*markPtr != 2)
 						{
-							vhandle3[i] = &(FeitoISectZone::point(global_id).used);
-							if (!vhandle3[i]->is_valid())
-								*vhandle3[i] = res->add_vertex(pMesh->point(*fvItr));
+							int b = pMesh->property(pMesh->TopologyInfo, *ffItr);
+							if (rule > -1 && b)
+							{
+								if (rule == b && *markPtr != 1)
+								{
+									*markPtr = 1; // queued
+									queue1.push(*ffItr);
+								}
+								else if (rule != b && *markPtr != 4) // seed
+								{
+									*markPtr = 4; // seed
+									queue2.push(*ffItr);
+								}
+							}
+							else
+							{
+								if (*markPtr != 1)
+								{
+									*markPtr = 1; // queued
+									queue1.push(*ffItr);
+								}
+							}
+						}
+					}
+				} // queue1
+
+				assert(accept != -1);
+				//static int count = 0;
+				//int count2 = count;
+				if (accept == 1)
+				{
+					for (auto itr:faceBuffer)
+					{
+						//if (!(count2--)) break;;
+						//debug
+						//auto dn = pMesh->n_faces();
+						auto fvItr = pMesh->fv_begin(itr);
+
+						MPMesh2::VertexHandle *vhandle3[3];
+						for (int i = 0; i < 3; i++,fvItr++)
+						{
+							// 检查是否已被添加
+							int global_id = pMesh->property(pMesh->VertexIndexPropHandle, *fvItr).value;
+							if (global_id != -1)
+							{
+								vhandle3[i] = &(FeitoISectZone::point(global_id).used);
+								if (!vhandle3[i]->is_valid())
+									*vhandle3[i] = res->add_vertex(pMesh->point(*fvItr));
 							
-							record[fvItr->idx()] = *(vhandle3[i]);
+								record[fvItr->idx()] = *(vhandle3[i]);
+							}
+							else
+							{
+								vhandle3[i] = &record[fvItr->idx()];
+								if (!record[fvItr->idx()].is_valid())
+									*vhandle3[i] = res->add_vertex(pMesh->point(*fvItr));
+							}
 						}
-						else
-						{
-							vhandle3[i] = &record[fvItr->idx()];
-							if (!record[fvItr->idx()].is_valid())
-								*vhandle3[i] = res->add_vertex(pMesh->point(*fvItr));
-						}
-					}
 
-					MPMesh2::FaceHandle fhandle;
-					if (main*op == 2)
-						fhandle = res->add_face(*vhandle3[2], *vhandle3[1], *vhandle3[0]);
-					else 
-						fhandle = res->add_face(*vhandle3[0], *vhandle3[1], *vhandle3[2]);
-					assert(fhandle.is_valid());
+						MPMesh2::FaceHandle fhandle;
+						if (main*op == 2)
+							fhandle = res->add_face(*vhandle3[2], *vhandle3[1], *vhandle3[0]);
+						else 
+							fhandle = res->add_face(*vhandle3[0], *vhandle3[1], *vhandle3[2]);
+						//assert(fhandle.is_valid());
+					}
 				}
-			}
-			faceBuffer.clear();
+				faceBuffer.clear();
 			//count++;
 			//break;
-
-		} // queue2
-
+			} // queue2
+		}
 		delete [] record;
 	}
 	return res;
@@ -833,7 +853,12 @@ extern "C" CSG_API MPMesh2* BooleanOperationFeito(MPMesh2* mesh1, MPMesh2* mesh2
     FeitoISectZone::clear();
     delete pOctree;
 
-	//res = arrMesh[0];
+	//static int count = 0;
+	//count ++;
+	//if (count == 2)
+	//{
+	////res = arrMesh[1];
+	//}
 	//res->garbage_collection();
 	size_t n = res->n_vertices();
 	res->verticesList = new Vec3d[n];
@@ -841,6 +866,12 @@ extern "C" CSG_API MPMesh2* BooleanOperationFeito(MPMesh2* mesh1, MPMesh2* mesh2
 	for (auto vItr = res->vertices_begin();
 		vItr != res->vertices_end(); vItr ++)
 		res->verticesList[vItr->idx()] = res->point(*vItr);
+
+	res->update_normals();
+	//GS::BaseMesh *p = Convert2BaseMesh2(res);
+	//delete res;
+	//res = Convert2MPMesh2(p);
+	//delete p;
 
     return res;
 }

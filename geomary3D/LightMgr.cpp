@@ -6,7 +6,7 @@ CLightMgr::CLightMgr(void)
 {
 	mLights.reserve(3);
 	GS::DirectionLight* pDefaultLight= new  GS::DirectionLight(GS::float4(0.8, 0.8, 0.8, 1.0),GS::float4(0.0, 0.0, 0.0, 1.0),
-	GS::float3( -0.7, 0.6, -1.2));
+	GS::float3( 0.7, 0.6, -1.2));
 	mLights.push_back(pDefaultLight);
 	pDefaultLight = new  GS::DirectionLight(GS::float4(0.45, 0.45, 0.45, 1.0), GS::float4(1.0, 1.0, 1.0, 1.0),
 			GS::float3(1.0, -0.4, 0.4));

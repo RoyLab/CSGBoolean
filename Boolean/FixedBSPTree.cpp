@@ -854,7 +854,7 @@ void FixedBSPTree::SplitBSPTree(const FixedBSPTreeNode* tg,
 		{
 		rightTree = new FixedBSPTreeNode(*tg, 0);
 
-		assert(bprelation != On && bprelation != Straddling);
+		//assert(bprelation != On && bprelation != Straddling);
 		//if (relation == Straddling)
 		//{
 		//	target.ClipByPlane(tg->partition, front, back);

@@ -22,7 +22,7 @@ enum OctNodeType{
     eIntered = 0x4
 };
 
-class MeshData;
+struct MeshData;
 
 struct  PolygonObj{
     struct SharedData {
