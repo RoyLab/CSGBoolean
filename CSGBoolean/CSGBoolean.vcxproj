@@ -76,6 +76,8 @@
     <ClCompile Include="COctree.cpp" />
     <ClCompile Include="BinaryTree.cpp" />
     <ClCompile Include="CMesh.cpp" />
+    <ClCompile Include="Exactness.cpp" />
+    <ClCompile Include="FeitoBool.cpp" />
     <ClCompile Include="isect.cpp" />
     <ClCompile Include="IsectTriangle.cpp" />
     <ClCompile Include="MPMesh.cpp" />
@@ -89,6 +91,7 @@
     <ClInclude Include="COctree.h" />
     <ClInclude Include="BinaryTree.h" />
     <ClInclude Include="CMesh.h" />
+    <ClInclude Include="Exactness.h" />
     <ClInclude Include="isect.h" />
     <ClInclude Include="IsectTriangle.h" />
     <ClInclude Include="MPMesh.h" />

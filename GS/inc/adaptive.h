@@ -724,12 +724,6 @@ namespace GS
 		return estimate(2, _mn);
 	}
 
-	static void ComputePoint(const double4& p0, const double4& p1, const double4& p2, double3& output)
-	{
-		 
-	}
-	
-
 	inline void exactDet2x2Sign(double m00, double m01, double m10, double m11, double* k)
 	{
 		REAL Declare_Var, Declare_VarEX, xe, ye, ze, x[2], y[2], z[2];
