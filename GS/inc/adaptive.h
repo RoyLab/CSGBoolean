@@ -256,6 +256,26 @@
 	a1 = mat[r+1][i] * mat[r][j];\
 	b = a0 - a1\
 
+#define InexactDet2x2(m00, m01, m10, m11, a0, a1, b)\
+	a0 = (m00) * (m11);\
+	a1 = (m01) * (m10);\
+	b = a0 - a1
+
+#define ExactDet2x2_Tail(m00, m01, m10, m11, p, q, d, tail)\
+	Two_Product_Tail(m00, m11, p, _i);\
+	Two_Product_Tail(m01, m10, q, _j);\
+	Two_Diff_Tail(p, q, d, tail);\
+	tail += (_i - _j)
+
+#define ExactDet2x2(m00, m01, m10, m11, x, y)\
+	InexactDet2x2(m00, m01, m10, m11, _i, _j, x);\
+	ExactDet2x2_Tail(m00, m01, m10, m11, _i, _j, x, y)
+
+
+#define MyTwoTwoSum(x1, x0, y1, y0, r1, r0)\
+	Two_Sum(x1, y1, r1, _i);\
+	(r0) = _i + x0 + y0
+
 #define Error_2x2(a0, a1, b, err)\
 	err = (::abs(a0) + ::abs(a1) + ::abs(b))
 
@@ -266,7 +286,7 @@ namespace GS
 	extern REAL splitter;     /* = 2^ceiling(p / 2) + 1.  Used to split floats in half. */
 	extern REAL epsilon;                /* = 2^(-p).  Used to estimate roundoff errors. */
 	extern REAL err3dot, err2x2, 
-		err3x3A0, err3x3A1, err3x3A2, err3x3B1, err3x3B2,
+		err3x3A0, err3x3A1, err3x3A2, err3x3B1, err3x3B2, 
 		err4x4A0, err4x4A1, err4x4A2, err4x4A3, err4x4B;
 	void exactinit();
 	double round(double);
@@ -679,6 +699,36 @@ namespace GS
 			m[1].x*(m[0].z*m[2].y - m[0].y*m[2].z) +
 			m[2].x*(m[0].y*m[1].z - m[0].z*m[1].y);
 	}
+
+	inline double ExactDet3x3(const double3x3& m)
+	{
+		REAL Declare_Var, Declare_VarEX, _n[3], _nt[3];
+
+		ExactDet2x2(m[1][1], m[2][2], m[1][2], m[2][1], _n[0], _nt[0]);
+		ExactDet2x2(m[2][1], m[0][2], m[2][2], m[0][1], _n[1], _nt[1]);
+		ExactDet2x2(m[0][1], m[1][2], m[0][2], m[1][1], _n[2], _nt[2]);
+
+		REAL _mn[3], _mnt[3];
+		Two_Product(m[0][0], _n[0], _mn[0], _mnt[0]);
+		_mnt[0] += _nt[0]*m[0][0];
+
+		Two_Product(m[1][0], _n[1], _mn[1], _mnt[1]);
+		_mnt[1] += _nt[1]*m[1][0];
+
+		Two_Product(m[2][0], _n[2], _mn[2], _mnt[2]);
+		_mnt[2] += _nt[2]*m[2][0];
+
+		MyTwoTwoSum(_mn[0], _mnt[0], _mn[1], _mnt[1], _j, _k);
+		MyTwoTwoSum( _j, _k, _mn[2], _mnt[2], _mn[0], _mn[1]);
+
+		return estimate(2, _mn);
+	}
+
+	static void ComputePoint(const double4& p0, const double4& p1, const double4& p2, double3& output)
+	{
+		 
+	}
+	
 
 	inline void exactDet2x2Sign(double m00, double m01, double m10, double m11, double* k)
 	{
