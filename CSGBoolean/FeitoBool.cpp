@@ -129,7 +129,6 @@ public:
     {
         verticesList.emplace_back(vec);
         return verticesList.size()-1;
-        return 0;
     }
 
 

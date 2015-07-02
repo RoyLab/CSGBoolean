@@ -11,31 +11,6 @@ const double ROUNDOFF_SCALE = std::pow(2.0, 18);
 const double EDGE_LENGTH_LIMIT = std::pow(2.0, -3.5);
 const double EDGE_LENGTH_OFFSET = std::pow(2.0, -4);
 
-template <class T>
-inline T RoundOff(T val)
-{
-	return round(val * ROUNDOFF_SCALE) / ROUNDOFF_SCALE;
-}
-
-template <class T>
-inline void RoundOffVec(T& vec)
-{
-	vec.x = RoundOff(vec.x);
-	vec.y = RoundOff(vec.y);
-	vec.z = RoundOff(vec.z);
-}
-
-template <class Vec1, class Vec2>
-void Uniformalize(Vec1& v, Vec2& center, Vec2& scale)
-{
-	return (v - center) / scale*2.0;
-}
-
-template <class Vec1, class Vec2>
-void Deuniformalize(Vec1& v, Vec2& center, Vec2& scale)
-{
-	return v / 2.0*scale + center;
-}
 
 inline void ConvertToPlaneReps(double3& v0, double3& e0, double3& e1, double4& plane)
 {
@@ -43,6 +18,10 @@ inline void ConvertToPlaneReps(double3& v0, double3& e0, double3& e1, double4& p
 	plane = double4(norm, -GS::dot(norm, v0));
 }
 
+void ConvertToPlaneReps(GS::double3(&v)[3], PlaneRepsTriangle& output)
+{
+	ConvertToPlaneReps(v[0], v[1], v[2], output);
+}
 
 void ConvertToPlaneReps(double3& v0, double3& v1, double3& v2, PlaneRepsTriangle& output)
 {

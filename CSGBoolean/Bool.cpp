@@ -80,26 +80,28 @@ namespace CSG
 		RelationTest(pOctree->Root, pOctree, relmap);
 	}
 
-	void ISectTest(Octree<>* pOctree)
+	void ISectTest(Octree<>* pOctree, const AABBmp& bbox)
 	{
 		assert(pOctree);
 		std::list<OctreeNode*> leaves;
 		GetLeafNodes(pOctree->Root, leaves, NODE_COMPOUND);
+		auto center = bbox.Center();
+		auto diag = bbox.Diagonal();
 
 		std::map<GS::IndexPair, std::set<GS::IndexPair>> antiOverlapMap;
 		for (auto leaf: leaves)
 		{
-			auto itr = leaf->TriangleTable.begin();
+			auto itr = leaf->TriangleTable.begin(); 
 			auto iEnd = leaf->TriangleTable.end();
 			decltype(iEnd) itr2;
 			unsigned i, j, ni, nj;
 			MPMesh *meshi, *meshj;
 			MPMesh::FaceHandle tri1, tri2;
-			Vec3d *v0,*v1,*v2, nv,*u0,*u1,*u2,nu,start,end;
+			Vec3d start,end;
+
 			MPMesh::FVIter fvItr;
 			int isISect;
 			int startT(0), endT(0);
-			ISectTriangle **si=nullptr, **sj=nullptr;
 			VertexPos startiT, startjT, endiT, endjT;
 			ISVertexItr vP1, vP2;
 
@@ -115,8 +117,6 @@ namespace CSG
 
 					meshi = pOctree->pMesh[itr->first];
 					meshj = pOctree->pMesh[itr2->first];
-
-                    //if (meshi->ID != 100 && meshj->ID != 100) continue;
 
 					if (meshi->ID > meshj->ID) {meshId[0] = meshj->ID; meshId[1] = meshi->ID;}
 					else {meshId[0] = meshi->ID; meshId[1] = meshj->ID;}
@@ -137,20 +137,46 @@ namespace CSG
 							if (antiOverlapSet.find(iPair) != antiOverlapSet.end()) continue;
 							else antiOverlapSet.insert(iPair);
 
-							// intersection test main body
-							GetCorners(meshi, tri1, v0, v1, v2);
-							GetCorners(meshj, tri2, u0, u1, u2);
+							// Tri-Tri Intersection test begin!
 
-							nv = meshi->normal(tri1);
-							nu = meshj->normal(tri2);
-							
-							startT = INNER; endT = INNER; // return to Zero.
+							startT = 0;	endT = 0; // return to Zero.
 
-							//auto &isecTris = (*si)->isecTris[meshj->ID];
-							//auto &icoplTris = (*si)->coplanarTris;
+							ISectTriangleOuter *&si = meshi->property(meshi->SurfacePropHandle, tri1);
+							ISectTriangleOuter *&sj = meshj->property(meshj->SurfacePropHandle, tri2);
 
-							isISect = TriTriIntersectTest(*v0, *v1, *v2, nv,
-								*u0, *u1, *u2, nu, startT, endT, start, end);
+							if (!si)
+							{
+								si = new ISectTriangleOuter;
+
+								GetCorners(meshi, tri1, si->corners[0], si->corners[1], si->corners[2]);
+								Uniformalize(si->corners[0], center, diag);
+								Uniformalize(si->corners[1], center, diag);
+								Uniformalize(si->corners[2], center, diag);
+
+								RoundOff(si->corners[0]);
+								RoundOff(si->corners[1]);
+								RoundOff(si->corners[2]);
+
+								ConvertToPlaneReps(si->corners, si->planeReps);
+							}
+
+							if (!sj)
+							{
+								sj = new ISectTriangleOuter;
+
+								GetCorners(meshj, tri2, sj->corners[0], sj->corners[1], sj->corners[2]);
+								Uniformalize(sj->corners[0], center, diag);
+								Uniformalize(sj->corners[1], center, diag);
+								Uniformalize(sj->corners[2], center, diag);
+
+								RoundOff(sj->corners[0]);
+								RoundOff(sj->corners[1]);
+								RoundOff(sj->corners[2]);
+
+								ConvertToPlaneReps(sj->corners, sj->planeReps);
+							}
+
+							isISect = PlaneRepsTriTriIntersectTest(*si, *sj, startT, endT, start, end);
 
 							if (isISect < 0) continue;
 
@@ -236,6 +262,10 @@ namespace CSG
 		delete pCSGTree;
         DebugInfo("Convert", t0);
         Octree<>* pOctree = BuildOctree(arrMesh, nMesh);
+
+		auto bbox = pOctree->Root->BoundingBox;
+		bbox.Enlarge(1.0e-5);
+
         DebugInfo("BuildTree", t0);
 		InitZone();
 		ISectTest(pOctree);

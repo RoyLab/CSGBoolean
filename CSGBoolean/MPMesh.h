@@ -14,7 +14,7 @@ namespace GS
 namespace CSG
 {
 	using OpenMesh::Vec3d;
-	struct ISectTriangle;
+	struct ISectTriangleOuter;
     class FeitoISectZone;
 
 	struct MyTraits : OpenMesh::DefaultTraits
@@ -41,7 +41,7 @@ namespace CSG
 		Vec3d *verticesList;
 
 		OpenMesh::FPropHandleT<unsigned> PointInOutTestPropHandle; // 是否在内外测试中被检测过
-		OpenMesh::FPropHandleT<ISectTriangle*> SurfacePropHandle; // 是否属于相交三角形
+		OpenMesh::FPropHandleT<ISectTriangleOuter*> SurfacePropHandle; // 是否属于相交三角形
 		OpenMesh::VPropHandleT<MPMesh::VertexHandle> VertexIndexPropHandle; // 在结果网格中的index
 		OpenMesh::FPropHandleT<int> MarkPropHandle;
 	};
@@ -87,6 +87,14 @@ namespace CSG
 		v0 = &(pMesh->verticesList[fvItr->idx()]);fvItr++;
 		v1 = &(pMesh->verticesList[fvItr->idx()]);fvItr++;
 		v2 = &(pMesh->verticesList[fvItr->idx()]);
+	}
+
+	inline void GetCorners(MPMesh* pMesh, MPMesh::FaceHandle fhandle, GS::double3& v0, GS::double3&v1, GS::double3&v2)
+	{
+		auto fvItr = pMesh->fv_begin(fhandle);
+		v0 = Vec3dToDouble3(pMesh->verticesList[fvItr->idx()]); fvItr++;
+		v1 = Vec3dToDouble3(pMesh->verticesList[fvItr->idx()]); fvItr++;
+		v2 = Vec3dToDouble3(pMesh->verticesList[fvItr->idx()]);
 	}
 
 	inline int TestNeighborIndex(MPMesh* pMesh, MPMesh::FaceHandle faceSeed, MPMesh::FaceHandle face)

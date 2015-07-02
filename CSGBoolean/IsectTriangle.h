@@ -5,6 +5,7 @@
 #include "BinaryTree.h"
 #include <map>
 #include "COctree.h"
+#include "Exactness.h"
 
 namespace CSG
 {
@@ -57,12 +58,21 @@ namespace CSG
 		~ISCutSegData();
 	};
 
+	struct ISectTriangleOuter
+	{
+		PlaneRepsTriangle planeReps;
+		GS::double3 corners[3];
+		ISectTriangle* isectTri = nullptr;
+
+		~ISectTriangleOuter(){SAFE_RELEASE(isectTri);}
+	};
+
+
 	struct ISectTriangle
 	{
 		std::list<ISVertexInfo> vertices;
 		std::map<int, ISCutSegData> segs;
 		std::map<int, std::list<MPMesh::FaceHandle>> coplanarTris;
-		//std::map<int, std::vector<MPMesh::FaceHandle>> isecTris;
 
 		MPMesh*				pMesh;
 		MPMesh::FaceHandle	face;

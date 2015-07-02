@@ -5,6 +5,8 @@
 #include "Intersect.h"
 #include "IsectTriangle.h"
 
+using GS::double4;
+
 #ifdef FINDMINMAX
 #undef FINDMINMAX
 #endif
@@ -285,6 +287,287 @@ static inline int sort2(P& a, P& b)
 		return 1;
 	}
 	return 0;
+}
+
+inline void ExactSign(double(&d)[3], int(&result)[3])
+{
+	for (int i = 0; i< 3; i++)
+	{
+		if (d[i] > 0)
+			result[i] = 1;
+		else if (d[i] < 0)
+			result[i] = -1;
+		else
+		{
+			d[i] = 0;
+			result[i] = 0;
+		}
+	}
+}
+
+
+const CSG::VertexPos Edge_Table[] = { EDGE_0, EDGE_1, EDGE_2 };
+const CSG::VertexPos Vertex_Table[] = { VER_0, VER_1, VER_2 };
+
+
+/* return false if degenerate */
+bool PlaneRepsComputeIntervalsIsectline(ISectTriangleOuter& tri, double (&d)[3], int (&sd)[3],
+	double4& isectEdge0, double4& isectEdge1, int& t0, int& t1)
+{
+	auto &bp = tri.planeReps.bPlanes;
+	int ipos = -1, ineg = -1, izero = -1, nzero = 0, npos = 0;
+	for (int i = 0; i < 3; i++)
+	{
+		if (sd[i] > 0) { ipos = i; npos++; }
+		else if (sd[i] < 0) ineg = i;
+		else { nzero++; izero = i; }
+	}
+
+	switch (nzero)
+	{
+	case 0:  // nzero
+	{
+		if (npos == 2)
+		{
+			isectEdge0 = bp[(ineg + 2) % 3];
+			isectEdge1 = -bp[(ineg + 1) % 3];
+			t0 = Edge_Table[(ineg + 2) % 3];
+			t1 = Edge_Table[(ineg + 1) % 3];
+		}
+		else
+		{
+			isectEdge0 = bp[(ipos + 1) % 3];
+			isectEdge1 = -bp[(ipos + 2) % 3];
+			t0 = Edge_Table[(ipos + 1) % 3];
+			t1 = Edge_Table[(ipos + 2) % 3];
+		}
+	}
+		break;
+	case 1:  // nzero
+	{
+		switch (npos)
+		{
+		case 0:  // 2 x -
+		{
+			isectEdge0 = isectEdge1 = bp[(izero + 1) % 3];
+			t0 = t1 = Vertex_Table[izero];
+		}
+			return false;
+		case 2:  // 2 x +
+		{
+			isectEdge0 = isectEdge1 = bp[(izero + 2) % 3];
+			t0 = t1 = Vertex_Table[izero];
+		}
+			return false;
+		default:  // 1 x +,  1 x -
+		{
+			if (sd[(izero + 2) % 3] > 0)
+			{
+				isectEdge0 = bp[izero];
+				isectEdge1 = -bp[ipos];
+				t0 = Edge_Table[izero];
+				t1 = Vertex_Table[izero];
+			}
+			else
+			{
+				isectEdge0 = bp[ipos];
+				isectEdge1 = -bp[izero];
+				t0 = Vertex_Table[izero];
+				t1 = Edge_Table[izero];
+			}
+		}
+			break;
+		}
+	}
+		break;
+	case 2: // nzero
+	{
+		if (npos == 2)
+		{
+			isectEdge0 = bp[(ineg + 2) % 3];
+			isectEdge1 = -bp[(ineg + 1) % 3];
+			t0 = Edge_Table[(ineg + 2) % 3];
+			t1 = Edge_Table[(ineg + 1) % 3];
+		}
+		else
+		{
+			isectEdge0 = bp[(ipos + 1) % 3];
+			isectEdge1 = -bp[(ipos + 2) % 3];
+			t0 = Edge_Table[(ipos + 1) % 3];
+			t1 = Edge_Table[(ipos + 2) % 3];
+		}
+	}
+		break;
+	default:
+		assert(0);
+		return false;
+	}
+
+	return true;
+}
+
+int PlaneRepsTriTriIntersectTest(ISectTriangleOuter& tri1, ISectTriangleOuter& tri2,
+						int& startType, int& endType, Vec3d& start, Vec3d& end)
+{
+	double du[3];
+	auto &nv = tri1.planeReps.sPlane.xyz;
+	du[0] = dot(nv, tri2.corners[0]) + tri1.planeReps.sPlane.w;
+	du[1] = dot(nv, tri2.corners[1]) + tri1.planeReps.sPlane.w;
+	du[2] = dot(nv, tri2.corners[2]) + tri1.planeReps.sPlane.w;
+
+	int sdu[3];
+	ExactSign(du, sdu);
+
+	if ((sdu[0] == sdu[1]) && (sdu[1] == sdu[2]))
+		if (sdu[0] == 0) return 0;
+		else return -1;
+
+	double dv[3];
+	auto &nu = tri2.planeReps.sPlane.xyz;
+	dv[0] = dot(nu, tri1.corners[0]) + tri2.planeReps.sPlane.w;
+	dv[1] = dot(nu, tri1.corners[1]) + tri2.planeReps.sPlane.w;
+	dv[2] = dot(nu, tri1.corners[2]) + tri2.planeReps.sPlane.w;
+	int sdv[3];
+	ExactSign(dv, sdv);
+	if ((sdv[0] == sdv[1]) && (sdv[1] == sdv[2]))
+		if (sdv[0] == 0) return 0;
+		else return -1;
+
+	int f0p0(0), f0p1(0), f1p0(0), f1p1(0);
+
+	/* compute interval for triangle 1 */
+	double4 isf0p0, isf0p1;
+	bool degen1 = PlaneRepsComputeIntervalsIsectline(tri1, dv, sdv, isf0p0, isf0p1, f0p0, f0p1);
+
+	/* compute interval for triangle 2 */
+	double isect2[2];
+	double4  isf1p0, isf1p1;
+	bool degen2 = PlaneRepsComputeIntervalsIsectline(tri2, du, sdu, isf1p0, isf1p1, f1p0, f1p1);
+
+	isf1p0 = -isf1p0;	isf1p1 = -isf1p1;
+
+	////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////
+	int smallest1 = sort2(isect1[0], isect1[1]);
+	int smallest2 = sort2(isect2[0], isect2[1]);
+	if (isect1[1]<isect2[0] || isect2[1]<isect1[0]) // 要不要用epsf?
+		return -1;
+
+	f1p0 <<= 16;
+	f1p1 <<= 16;
+
+	/* at this point, we know that the triangles intersect */
+	double dstart = isect1[0] - isect2[0];
+	if (dstart > EPSF)
+	{
+		if (smallest1 == 0)
+		{
+			start = isectpointA1;
+			startType ^= f0p0;
+		}
+		else
+		{
+			start = isectpointA2;
+			startType ^= f0p1;
+		}
+
+		if (res2) startType ^= res2;
+	}
+	else if (dstart < -EPSF)
+	{
+		if (smallest2 == 0)
+		{
+			start = isectpointB1;
+			startType ^= f1p0;
+		}
+		else
+		{
+			start = isectpointB2;
+			startType ^= f1p1;
+		}
+		if (res1) startType ^= res1; // 这里可能会出问题
+	}
+	else
+	{
+		if (smallest1 == 0)
+		{
+			start = isectpointA1;
+			startType ^= f0p0;
+		}
+		else
+		{
+			start = isectpointA2;
+			startType ^= f0p1;
+		}
+
+		if (smallest2 == 0)
+		{
+			start = (isectpointB1 + start) / 2.0;
+			startType ^= f1p0;
+		}
+		else
+		{
+			start = (isectpointB2 + start) / 2.0;
+			startType ^= f1p1;
+		}
+	}
+
+	double dend = isect2[1] - isect1[1];
+	if (dend > EPSF)
+	{
+		if (smallest1 == 0)
+		{
+			end = isectpointA2;
+			endType ^= f0p1;
+		}
+		else
+		{
+			end = isectpointA1;
+			endType ^= f0p0;
+		}
+		if (res2) endType ^= res2;
+	}
+	else if (dend < -EPSF)
+	{
+		if (smallest2 == 0)
+		{
+			end = isectpointB2;
+			endType ^= f1p1;
+		}
+		else
+		{
+			end = isectpointB1;
+			endType ^= f1p0;
+		}
+		if (res1) endType ^= res1;
+	}
+	else
+	{
+		if (smallest1 == 0)
+		{
+			end = isectpointA2;
+			endType ^= f0p1;
+		}
+		else
+		{
+			end = isectpointA1;
+			endType ^= f0p0;
+		}
+
+		if (smallest2 == 0)
+		{
+			end = (isectpointB2 + end) / 2.0;
+			endType ^= f1p1;
+		}
+		else
+		{
+			end = (isectpointB1 + end) / 2.0;
+			endType ^= f1p0;
+		}
+	}
+
+	return 1;
 }
 
 

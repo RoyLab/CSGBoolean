@@ -6,6 +6,8 @@ using OpenMesh::Vec3d;
 
 namespace CSG
 {
+	struct ISectTriangleOuter;
+
 	inline bool IsEqual(const Vec3d& v1, const Vec3d& v2)
 	{
 		if (fabs(v1[0] - v2[0]) > EPSF) return false;
@@ -20,6 +22,11 @@ namespace CSG
 	int TriTriIntersectTest(const Vec3d& v0, const Vec3d& v1, const Vec3d& v2, const Vec3d& nv, 
 							 const Vec3d& u0, const Vec3d& u1, const Vec3d& u2, const Vec3d& nu,
 							 int& startType, int& endType, Vec3d& start, Vec3d& end);
+
+
+	int PlaneRepsTriTriIntersectTest(ISectTriangleOuter& tri1, ISectTriangleOuter& tri2,
+									int& startType, int& endType, Vec3d& start, Vec3d& end);
+
 
 	bool RayTriangleIntersectTest(const Vec3d& o, const Vec3d& d, const Vec3d& v0, const Vec3d& v1,  const Vec3d& v2,
                               double& u, double& v, double& t);
