@@ -470,7 +470,7 @@ void CGeomary3DView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	switch (nChar)
 	{
 	case 67:
-		CSG::SnapModel((GS::BaseMesh*)(Graphic()->GetModelMgr().mpResultMeshList[0]));
+		//CSG::SnapModel((GS::BaseMesh*)(Graphic()->GetModelMgr().mpResultMeshList[0]));
 		break;
     case 68:
         _renderState = (_renderState+1)%3;

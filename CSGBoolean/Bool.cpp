@@ -684,7 +684,7 @@ namespace CSG
 							    AddTriangle(pMesh, curFace, GS::float4(0.1,0.1,0.1,1));
                             }
 #else
-							ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result, &color);
+							ParsingFace(pMesh, curFace, &testList, curRelation, pOctree->pMesh, points, pOctree, result, &GS::float4(1.0f, 0.0f, 0.0f, 1.0f));
 #endif
 #endif
 							pMesh->property(pMesh->MarkPropHandle, curFace) = 2; // processed
